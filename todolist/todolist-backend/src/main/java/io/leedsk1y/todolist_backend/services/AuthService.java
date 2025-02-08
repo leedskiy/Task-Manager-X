@@ -8,8 +8,6 @@ import io.leedsk1y.todolist_backend.repositories.RoleRepository;
 import io.leedsk1y.todolist_backend.repositories.UserRepository;
 import io.leedsk1y.todolist_backend.security.jwt.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -20,7 +18,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class AuthService {
@@ -58,5 +55,30 @@ public class AuthService {
         user.setRoles(roles);
 
         return userRepository.save(user);
+    }
+
+    public LoginResponse authenticateUser(String email, String password) {
+        try {
+            // Authenticate user
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(email, password));
+
+            // Set authentication in SecurityContext
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            // Retrieve authenticated user details
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+            // Fetch user from DB
+            User user = userRepository.findByEmail(email.toLowerCase())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Generate JWT Token
+            String jwtToken = jwtUtils.generateTokenFromUsername(userDetails);
+
+            return new LoginResponse(jwtToken, user.getId(), user.getEmail(), userDetails.getAuthorities());
+        } catch (AuthenticationException e) {
+            throw new RuntimeException("Invalid email or password");
+        }
     }
 }

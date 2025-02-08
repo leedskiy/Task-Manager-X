@@ -4,11 +4,13 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "users", uniqueConstraints = {
@@ -16,7 +18,7 @@ import java.util.UUID;
 })
 @Getter
 @Setter
-public class User {
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -35,11 +37,43 @@ public class User {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    @ManyToMany(fetch = FetchType.EAGER) // Fetch roles eagerly to avoid LazyInitializationException
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
-            name = "user_roles",  // Name of the join table
-            joinColumns = @JoinColumn(name = "user_id"),  // User foreign key
-            inverseJoinColumns = @JoinColumn(name = "role_id")  // Role foreign key
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return roles.stream()
+                .map(role -> new SimpleGrantedAuthority(role.getName().name()))
+                .collect(Collectors.toSet());
+    }
+
+    @Override
+    public String getUsername() {
+        return email; // email as a username
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true; // temp
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true; // temp
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true; // temp
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true; // temp
+    }
 }

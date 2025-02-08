@@ -1,9 +1,9 @@
 package io.leedsk1y.todolist_backend.security;
 
+import io.leedsk1y.todolist_backend.repositories.UserRepository;
 import io.leedsk1y.todolist_backend.security.jwt.AuthEntryPointJwt;
 import io.leedsk1y.todolist_backend.security.jwt.AuthTokenFilter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,16 +14,12 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
-import javax.sql.DataSource;
 
 @Configuration
 @EnableWebSecurity
@@ -31,15 +27,10 @@ import javax.sql.DataSource;
 public class SecurityConfig {
 
     @Autowired
-    DataSource dataSource;
-
-    @Autowired
     private AuthEntryPointJwt unauthorizedHandler;
 
-    @Bean
-    public UserDetailsService userDetailsService(DataSource dataSource) {
-        return new JdbcUserDetailsManager(dataSource);
-    }
+    @Autowired
+    private UserRepository userRepository;
 
     @Bean
     public AuthTokenFilter authenticationJwtTokenFilter() {
@@ -47,8 +38,15 @@ public class SecurityConfig {
     }
 
     @Bean
+    UserDetailsService userDetailsService() {
+        return username -> userRepository.findByEmail(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
+
+    @Bean
     @Order(SecurityProperties.BASIC_AUTH_ORDER)
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+
         http.authorizeHttpRequests(authorizeRequests ->
                 authorizeRequests
                         .requestMatchers("/h2-console/**").permitAll() // allows all requests coming to h2-console
