@@ -37,6 +37,11 @@ public class SecurityConfig {
     private AuthEntryPointJwt unauthorizedHandler;
 
     @Bean
+    public UserDetailsService userDetailsService(DataSource dataSource) {
+        return new JdbcUserDetailsManager(dataSource);
+    }
+
+    @Bean
     public AuthTokenFilter authenticationJwtTokenFilter() {
         return new AuthTokenFilter();
     }
@@ -47,7 +52,7 @@ public class SecurityConfig {
         http.authorizeHttpRequests(authorizeRequests ->
                 authorizeRequests
                         .requestMatchers("/h2-console/**").permitAll() // allows all requests coming to h2-console
-                        .requestMatchers("/signin").permitAll() // JWT
+                        .requestMatchers("/auth/register", "/auth/login").permitAll() // security
                         .anyRequest().authenticated());
 
         http.sessionManagement(session ->
@@ -72,31 +77,6 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration builder)
             throws Exception {
         return builder.getAuthenticationManager();
-    }
-
-    @Bean
-    public UserDetailsService userDetailsService(DataSource dataSource) {
-        return new JdbcUserDetailsManager(dataSource);
-    }
-
-    @Bean
-    public CommandLineRunner initData(UserDetailsService userDetailsService) {
-        return args -> {
-            JdbcUserDetailsManager manager = (JdbcUserDetailsManager) userDetailsService;
-            UserDetails user1 = User.withUsername("user1")
-                    .password(passwordEncoder().encode("pass1"))
-                    .roles("USER")
-                    .build();
-
-            UserDetails admin = User.withUsername("admin")
-                    .password(passwordEncoder().encode("pass2"))
-                    .roles("ADMIN")
-                    .build();
-
-            JdbcUserDetailsManager userDetailsManager = new JdbcUserDetailsManager(dataSource);
-            userDetailsManager.createUser(user1);
-            userDetailsManager.createUser(admin);
-        };
     }
 
     @Bean
