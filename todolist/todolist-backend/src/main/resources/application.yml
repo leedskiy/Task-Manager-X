@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: ToDoListBackend
+  app:
+    jwtSecret: mySecretKey1992udayudad8w719y1ge189fbabf1281t61gbaubydq781
+    jwtExpirationMs: 3000000
+  h2:
+    console:
+     enabled: true
+  datasource:
+    url: jdbc:h2:mem:test
