@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -29,7 +30,6 @@ public class AuthController {
 
     @Autowired
     private JwtUtils jwtUtils;
-
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
@@ -83,5 +83,26 @@ public class AuthController {
                 )))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("message", "User not found", "status", false)));
+    }
+
+    @GetMapping("/oauth2/callback")
+    public ResponseEntity<?> handleOAuth2Login(OAuth2User oAuth2User) {
+        String email = oAuth2User.getAttribute("email");
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String token = jwtUtils.generateTokenFromUsername(user);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "OAuth2 Login Successful",
+                "token", token,
+                "user", Map.of(
+                        "id", user.getId(),
+                        "name", user.getName(),
+                        "email", user.getEmail(),
+                        "profileImage", user.getProfileImage()
+                )
+        ));
     }
 }

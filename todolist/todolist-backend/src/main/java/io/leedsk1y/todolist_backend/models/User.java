@@ -29,13 +29,15 @@ public class User implements UserDetails {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
     private String password;
 
     private String profileImage;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    @Enumerated(EnumType.STRING)
+    private EAuthProvider authProvider;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

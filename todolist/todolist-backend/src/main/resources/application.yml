@@ -2,7 +2,7 @@ spring:
   application:
     name: ToDoListBackend
   app:
-    jwtSecret: mySecretKey1992udayudad8w719y1ge189fbabf1281t61gbaubydq781
+    jwtSecret: ${JWT_SECRET}
     jwtExpirationMs: 3000000
   h2:
     console:
@@ -16,3 +16,13 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
   flyway:
     enabled: true
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope: openid, profile, email
+  config:
+    import: "optional:file:.env[.properties]"

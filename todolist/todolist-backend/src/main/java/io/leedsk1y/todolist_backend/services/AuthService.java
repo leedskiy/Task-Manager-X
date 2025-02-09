@@ -1,6 +1,7 @@
 package io.leedsk1y.todolist_backend.services;
 
 import io.leedsk1y.todolist_backend.dto.LoginResponse;
+import io.leedsk1y.todolist_backend.models.EAuthProvider;
 import io.leedsk1y.todolist_backend.models.ERole;
 import io.leedsk1y.todolist_backend.models.Role;
 import io.leedsk1y.todolist_backend.models.User;
@@ -46,6 +47,7 @@ public class AuthService {
         user.setName(name);
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
+        user.setAuthProvider(EAuthProvider.DEFAULT);
 
         // assign user role
         Set<Role> roles = new HashSet<>();

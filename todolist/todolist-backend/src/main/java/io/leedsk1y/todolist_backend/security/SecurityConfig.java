@@ -50,11 +50,11 @@ public class SecurityConfig {
         http.authorizeHttpRequests(authorizeRequests ->
                 authorizeRequests
                         .requestMatchers("/h2-console", "/h2-console/**").permitAll() // (temp) allows all requests coming to h2-console
-                        .requestMatchers("/auth/register", "/auth/login").permitAll() // security
+                        .requestMatchers("/auth/register", "/auth/login", "/oauth2/**").permitAll() // security
                         .anyRequest().authenticated());
 
         http.sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // removes usage of cookies
+                session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
 
         http.exceptionHandling(exception ->
                 exception.authenticationEntryPoint(unauthorizedHandler)); // choosing custom exception handler JWT
@@ -67,6 +67,11 @@ public class SecurityConfig {
 
         http.addFilterBefore(authenticationJwtTokenFilter(),
                 UsernamePasswordAuthenticationFilter.class); // add custom filter for JWT
+
+        http.oauth2Login(oauth2 -> oauth2
+                .loginPage("/oauth2/login/google")
+                .defaultSuccessUrl("/oauth2/login/success", true)
+                .failureUrl("/oauth2/login/failure"));
 
         return http.build();
     }

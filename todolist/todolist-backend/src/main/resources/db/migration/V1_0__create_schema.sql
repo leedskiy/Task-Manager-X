@@ -7,9 +7,10 @@ CREATE TABLE users (
     id UUID PRIMARY KEY,
     name VARCHAR(255),
     email VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
+    password VARCHAR(255),
     profile_image VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    auth_provider VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE roles (
@@ -35,8 +36,10 @@ MERGE INTO roles (id, name)
     VALUES (RANDOM_UUID(), 'ROLE_ADMIN');
 
 -- (temp) solution for adding admin
-INSERT INTO users (id, name, email, password, profile_image, created_at)
-VALUES (RANDOM_UUID(), 'admin', 'admin@example.moc', '$2a$10$atOzquGlgkP9NUmG/IdlTu..85YWpBqozAmFYVOYZqOTP16htr8AG', NULL, CURRENT_TIMESTAMP);
+INSERT INTO users (id, name, email, password, profile_image, created_at, auth_provider)
+VALUES (RANDOM_UUID(), 'admin', 'admin@example.moc',
+        '$2a$10$atOzquGlgkP9NUmG/IdlTu..85YWpBqozAmFYVOYZqOTP16htr8AG',
+        NULL, CURRENT_TIMESTAMP, 'DEFAULT');
 
 INSERT INTO user_roles (user_id, role_id)
 SELECT u.id, r.id
