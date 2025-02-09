@@ -6,10 +6,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -32,7 +36,9 @@ public class UserController {
                         "id", user.getId(),
                         "name", user.getName(),
                         "email", user.getEmail(),
-                        "roles", user.getRoles()
+                        "profileImage", Optional.ofNullable(user.getProfileImage()).orElse(""),
+                        "roles", user.getRoles(),
+                        "authProvider", user.getAuthProvider()
                 )))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("message", "User not found", "status", false)));
@@ -46,7 +52,9 @@ public class UserController {
                         "id", user.getId(),
                         "name", user.getName(),
                         "email", user.getEmail(),
-                        "roles", user.getRoles()
+                        "profileImage", Optional.ofNullable(user.getProfileImage()).orElse(""),
+                        "roles", user.getRoles(),
+                        "authProvider", user.getAuthProvider()
                 )))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("message", "User not found", "status", false)));
@@ -61,7 +69,9 @@ public class UserController {
                 "id", user.getId(),
                 "name", user.getName(),
                 "email", user.getEmail(),
-                "roles", user.getRoles()
+                "profileImage", Optional.ofNullable(user.getProfileImage()).orElse(""),
+                "roles", user.getRoles(),
+                "authProvider", user.getAuthProvider()
         )).collect(Collectors.toList());
 
         return ResponseEntity.ok(userList);

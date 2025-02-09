@@ -1,9 +1,7 @@
 package io.leedsk1y.todolist_backend.controllers;
 
-import io.leedsk1y.todolist_backend.models.User;
 import io.leedsk1y.todolist_backend.services.OAuth2Service;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -19,26 +17,29 @@ import java.net.URI;
 @RestController
 @RequestMapping("/oauth2/login")
 public class OAuth2Controller {
-    @Autowired
-    private OAuth2Service oAuthService;
+    private final OAuth2Service oAuthService;
+
+    public OAuth2Controller(OAuth2Service oAuthService) {
+        this.oAuthService = oAuthService;
+    }
 
     @GetMapping("/google")
     public ResponseEntity<String > loginGoogleAuth(HttpServletResponse response) throws IOException {
         response.sendRedirect("/oauth2/authorization/google");
-        return ResponseEntity.ok("Redirecting ..");
+        return ResponseEntity.ok("Redirecting...");
     }
 
     @GetMapping("/success")
     public ResponseEntity<? > handleGoogleSuccess(){
+        // get authentication
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
         if (!(authentication instanceof OAuth2AuthenticationToken)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized: OAuth2 token is missing.");
         }
-
         OAuth2AuthenticationToken auth2AuthenticationToken = (OAuth2AuthenticationToken) authentication;
 
-        User user = oAuthService.loginRegisterByGoogleOAuth2(auth2AuthenticationToken);
+        // register or login
+        oAuthService.loginRegisterByGoogleOAuth2(auth2AuthenticationToken);
 
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create("http://localhost:3000/dashboard")).build();
     }

@@ -6,49 +6,46 @@ import io.leedsk1y.todolist_backend.models.Role;
 import io.leedsk1y.todolist_backend.models.User;
 import io.leedsk1y.todolist_backend.repositories.RoleRepository;
 import io.leedsk1y.todolist_backend.repositories.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 import java.util.Set;
 
 @Service
 public class OAuth2Service {
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
-    @Autowired
-    private RoleRepository roleRepository;
+    public OAuth2Service(UserRepository userRepository, RoleRepository roleRepository) {
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+    }
 
-    public  User loginRegisterByGoogleOAuth2(OAuth2AuthenticationToken auth2AuthenticationToken){
+    private String getEmail(OAuth2User oAuth2User) {
+        return oAuth2User.getAttribute("email");
+    }
+
+    public User loginRegisterByGoogleOAuth2(OAuth2AuthenticationToken auth2AuthenticationToken) {
         OAuth2User oAuth2User = auth2AuthenticationToken.getPrincipal();
-        
-        String email = oAuth2User.getAttribute("email");
-        String name = oAuth2User.getAttribute("name");
-        String picture = oAuth2User.getAttribute("picture");
+        String email = getEmail(oAuth2User);
 
-        Optional<User> userOptional = userRepository.findByEmail(email);
-        User user;
+        return userRepository.findByEmail(email)
+                .orElseGet(() -> createNewOAuthUser(oAuth2User));
+    }
 
-        if (userOptional.isPresent()) {
-            user = userOptional.get();
-        } else {
-            user = new User();
-            user.setEmail(email);
-            user.setName(name);
-            user.setProfileImage(picture);
-            user.setPassword(null);
-            user.setAuthProvider(EAuthProvider.GOOGLE);
+    private User createNewOAuthUser(OAuth2User oAuth2User) {
+        User user = new User();
+        user.setEmail(getEmail(oAuth2User));
+        user.setName(oAuth2User.getAttribute("name"));
+        user.setProfileImage(oAuth2User.getAttribute("picture"));
+        user.setPassword(null);
+        user.setAuthProvider(EAuthProvider.GOOGLE);
 
-            Role userRole = roleRepository.findByName(ERole.ROLE_USER)
-                    .orElseThrow(() -> new RuntimeException("Error: Role not found"));
-            user.setRoles(Set.of(userRole));
+        Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+                .orElseThrow(() -> new RuntimeException("Error: Role not found"));
+        user.setRoles(Set.of(userRole));
 
-            userRepository.save(user);
-        }
-
-        return user;
+        return userRepository.save(user);
     }
 }

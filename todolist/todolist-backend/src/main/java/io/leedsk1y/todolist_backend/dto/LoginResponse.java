@@ -1,5 +1,6 @@
 package io.leedsk1y.todolist_backend.dto;
 
+import io.leedsk1y.todolist_backend.models.EAuthProvider;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,5 +16,7 @@ public class LoginResponse {
     private String token;
     private UUID userId;
     private String email;
+    private String profileImage;
     private Collection<? extends GrantedAuthority> roles;
+    private EAuthProvider authProvider;
 }

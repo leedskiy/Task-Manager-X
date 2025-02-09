@@ -8,7 +8,6 @@ import io.leedsk1y.todolist_backend.models.User;
 import io.leedsk1y.todolist_backend.repositories.RoleRepository;
 import io.leedsk1y.todolist_backend.repositories.UserRepository;
 import io.leedsk1y.todolist_backend.security.jwt.JwtUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -18,24 +17,26 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Service
 public class AuthService {
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtils jwtUtils;
 
-    @Autowired
-    private RoleRepository roleRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
-    @Autowired
-    private JwtUtils jwtUtils;
+    public AuthService(UserRepository userRepository, RoleRepository roleRepository,
+                       PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager,
+                       JwtUtils jwtUtils) {
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.jwtUtils = jwtUtils;
+    }
 
     public User registerUser(String name, String email, String password) {
         if (userRepository.existsByEmail(email)) {
@@ -61,24 +62,21 @@ public class AuthService {
 
     public LoginResponse authenticateUser(String email, String password) {
         try {
-            // Authenticate user
+            // authenticate user
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(email, password));
-
-            // Set authentication in SecurityContext
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // Retrieve authenticated user details
+            // get authenticated user details and fetch user
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-
-            // Fetch user from DB
             User user = userRepository.findByEmail(email.toLowerCase())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // Generate JWT Token
+            // generate jwt token
             String jwtToken = jwtUtils.generateTokenFromUsername(userDetails);
 
-            return new LoginResponse(jwtToken, user.getId(), user.getEmail(), userDetails.getAuthorities());
+            return new LoginResponse(jwtToken, user.getId(), user.getEmail(),
+                    user.getProfileImage(), userDetails.getAuthorities(), user.getAuthProvider());
         } catch (AuthenticationException e) {
             throw new RuntimeException("Invalid email or password");
         }

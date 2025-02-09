@@ -3,7 +3,7 @@ spring:
     name: ToDoListBackend
   app:
     jwtSecret: ${JWT_SECRET}
-    jwtExpirationMs: 3000000
+    jwtExpirationMs: 3600000
   h2:
     console:
      enabled: true

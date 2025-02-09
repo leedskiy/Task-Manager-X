@@ -3,7 +3,6 @@ package io.leedsk1y.todolist_backend.security;
 import io.leedsk1y.todolist_backend.repositories.UserRepository;
 import io.leedsk1y.todolist_backend.security.jwt.AuthEntryPointJwt;
 import io.leedsk1y.todolist_backend.security.jwt.AuthTokenFilter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,12 +24,24 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+    private final AuthEntryPointJwt unauthorizedHandler;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private AuthEntryPointJwt unauthorizedHandler;
+    public SecurityConfig(AuthEntryPointJwt unauthorizedHandler, UserRepository userRepository) {
+        this.unauthorizedHandler = unauthorizedHandler;
+        this.userRepository = userRepository;
+    }
 
-    @Autowired
-    private UserRepository userRepository;
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration builder)
+            throws Exception {
+        return builder.getAuthenticationManager();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
     @Bean
     public AuthTokenFilter authenticationJwtTokenFilter() {
@@ -46,7 +57,6 @@ public class SecurityConfig {
     @Bean
     @Order(SecurityProperties.BASIC_AUTH_ORDER)
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
-
         http.authorizeHttpRequests(authorizeRequests ->
                 authorizeRequests
                         .requestMatchers("/h2-console", "/h2-console/**").permitAll() // (temp) allows all requests coming to h2-console
@@ -54,7 +64,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated());
 
         http.sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
+                session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)); // cookies
 
         http.exceptionHandling(exception ->
                 exception.authenticationEntryPoint(unauthorizedHandler)); // choosing custom exception handler JWT
@@ -75,16 +85,4 @@ public class SecurityConfig {
 
         return http.build();
     }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration builder)
-            throws Exception {
-        return builder.getAuthenticationManager();
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
 }

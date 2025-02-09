@@ -8,37 +8,42 @@ import io.leedsk1y.todolist_backend.repositories.UserRepository;
 import io.leedsk1y.todolist_backend.security.jwt.JwtUtils;
 import io.leedsk1y.todolist_backend.services.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final AuthService authService;
+    private final JwtUtils jwtUtils;
 
-    @Autowired
-    private AuthService authService;
-
-    @Autowired
-    private JwtUtils jwtUtils;
+    public AuthController(UserRepository userRepository, AuthService authService, JwtUtils jwtUtils) {
+        this.userRepository = userRepository;
+        this.authService = authService;
+        this.jwtUtils = jwtUtils;
+    }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+        // check if user exists
         if (userRepository.existsByEmail(request.getEmail())) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "Email is already in use", "status", false));
         }
 
-        // creating user
+        // register user
         User newUser = authService.registerUser(request.getName(), request.getEmail(), request.getPassword());
 
         return ResponseEntity.ok(Map.of("message", "User registered successfully", "user", newUser));
@@ -47,6 +52,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
+            // authenticate user
             LoginResponse response = authService.authenticateUser(request.getEmail(), request.getPassword());
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
@@ -58,15 +64,16 @@ public class AuthController {
         }
     }
 
-    @GetMapping("/logout")
+    @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request) {
         String token = jwtUtils.getJwtFromHeader(request);
 
+        // blacklist token and clear security context
         if (token != null) {
             jwtUtils.blacklistToken(token);
         }
-
         SecurityContextHolder.clearContext();
+
         return ResponseEntity.ok(Map.of("message", "User logged out successfully", "status", true));
     }
 
@@ -79,30 +86,11 @@ public class AuthController {
                         "id", user.getId(),
                         "name", user.getName(),
                         "email", user.getEmail(),
-                        "roles", user.getRoles()
+                        "profileImage", Optional.ofNullable(user.getProfileImage()).orElse(""),
+                        "roles", user.getRoles(),
+                        "authProvider", user.getAuthProvider()
                 )))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("message", "User not found", "status", false)));
-    }
-
-    @GetMapping("/oauth2/callback")
-    public ResponseEntity<?> handleOAuth2Login(OAuth2User oAuth2User) {
-        String email = oAuth2User.getAttribute("email");
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        String token = jwtUtils.generateTokenFromUsername(user);
-
-        return ResponseEntity.ok(Map.of(
-                "message", "OAuth2 Login Successful",
-                "token", token,
-                "user", Map.of(
-                        "id", user.getId(),
-                        "name", user.getName(),
-                        "email", user.getEmail(),
-                        "profileImage", user.getProfileImage()
-                )
-        ));
     }
 }
