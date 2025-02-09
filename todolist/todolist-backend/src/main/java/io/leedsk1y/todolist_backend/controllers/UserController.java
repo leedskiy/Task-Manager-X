@@ -2,6 +2,7 @@ package io.leedsk1y.todolist_backend.controllers;
 
 import io.leedsk1y.todolist_backend.models.User;
 import io.leedsk1y.todolist_backend.repositories.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,29 +27,29 @@ public class UserController {
     public ResponseEntity<?> getAuthenticatedUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        return ResponseEntity.ok(Map.of(
-                "id", user.getId(),
-                "name", user.getName(),
-                "email", user.getEmail(),
-                "roles", user.getRoles()
-        ));
+        return userRepository.findByEmail(email)
+                .map(user -> ResponseEntity.ok(Map.of(
+                        "id", user.getId(),
+                        "name", user.getName(),
+                        "email", user.getEmail(),
+                        "roles", user.getRoles()
+                )))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "User not found", "status", false)));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserById(@PathVariable UUID id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        return ResponseEntity.ok(Map.of(
-                "id", user.getId(),
-                "name", user.getName(),
-                "email", user.getEmail(),
-                "roles", user.getRoles()
-        ));
+        return userRepository.findById(id)
+                .map(user -> ResponseEntity.ok(Map.of(
+                        "id", user.getId(),
+                        "name", user.getName(),
+                        "email", user.getEmail(),
+                        "roles", user.getRoles()
+                )))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "User not found", "status", false)));
     }
 
     @PreAuthorize("hasRole('ADMIN')")

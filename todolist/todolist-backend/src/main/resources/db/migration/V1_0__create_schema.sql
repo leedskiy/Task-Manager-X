@@ -41,4 +41,4 @@ VALUES (RANDOM_UUID(), 'admin', 'admin@example.moc', '$2a$10$atOzquGlgkP9NUmG/Id
 INSERT INTO user_roles (user_id, role_id)
 SELECT u.id, r.id
 FROM users u, roles r
-WHERE u.email = 'admin@gmail.com' AND r.name IN ('ROLE_USER', 'ROLE_ADMIN');
+WHERE u.email = 'admin@example.moc' AND r.name IN ('ROLE_USER', 'ROLE_ADMIN');
