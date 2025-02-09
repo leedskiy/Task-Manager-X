@@ -34,9 +34,9 @@ MERGE INTO roles (id, name)
     KEY(name)
     VALUES (RANDOM_UUID(), 'ROLE_ADMIN');
 
--- temp solution for adding admin
+-- (temp) solution for adding admin
 INSERT INTO users (id, name, email, password, profile_image, created_at)
-VALUES (RANDOM_UUID(), 'admin', 'admin@gmail.com', '$2a$10$atOzquGlgkP9NUmG/IdlTu..85YWpBqozAmFYVOYZqOTP16htr8AG', NULL, CURRENT_TIMESTAMP);
+VALUES (RANDOM_UUID(), 'admin', 'admin@example.moc', '$2a$10$atOzquGlgkP9NUmG/IdlTu..85YWpBqozAmFYVOYZqOTP16htr8AG', NULL, CURRENT_TIMESTAMP);
 
 INSERT INTO user_roles (user_id, role_id)
 SELECT u.id, r.id
