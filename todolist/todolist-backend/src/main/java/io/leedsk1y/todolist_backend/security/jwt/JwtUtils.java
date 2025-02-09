@@ -13,6 +13,8 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.security.Key;
 import java.util.Date;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class JwtUtils {
@@ -23,6 +25,12 @@ public class JwtUtils {
 
     @Value("${spring.app.jwtExpirationMs}")
     private int jwtExpirationMs;
+
+    private Key key() {
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+    }
+
+    private final Set<String> blacklistedTokens = ConcurrentHashMap.newKeySet();
 
     public String getJwtFromHeader(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
@@ -52,11 +60,19 @@ public class JwtUtils {
                 .getSubject();
     }
 
-    private Key key() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+    public void blacklistToken(String token) {
+        blacklistedTokens.add(token);
+    }
+
+    public boolean isTokenBlacklisted(String token) {
+        return blacklistedTokens.contains(token);
     }
 
     public boolean validateJwtToken(String authToken) {
+        if (isTokenBlacklisted(authToken)) {
+            logger.error("JWT token is blacklisted");
+            return false;
+        }
         try {
             Jwts.parser().verifyWith((SecretKey) key()).build().parseSignedClaims(authToken);
             return true;

@@ -5,10 +5,13 @@ import io.leedsk1y.todolist_backend.dto.LoginResponse;
 import io.leedsk1y.todolist_backend.dto.RegisterRequest;
 import io.leedsk1y.todolist_backend.models.User;
 import io.leedsk1y.todolist_backend.repositories.UserRepository;
+import io.leedsk1y.todolist_backend.security.jwt.JwtUtils;
 import io.leedsk1y.todolist_backend.services.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -22,6 +25,10 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private JwtUtils jwtUtils;
+
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
@@ -44,7 +51,35 @@ public class AuthController {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("message", "Bad credentials");
             errorResponse.put("status", false);
+
             return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
         }
+    }
+
+    @GetMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        String token = jwtUtils.getJwtFromHeader(request);
+
+        if (token != null) {
+            jwtUtils.blacklistToken(token);
+        }
+
+        SecurityContextHolder.clearContext();
+        return ResponseEntity.ok(Map.of("message", "User logged out successfully", "status", true));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getAuthenticatedUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return ResponseEntity.ok(Map.of(
+                "id", user.getId(),
+                "name", user.getName(),
+                "email", user.getEmail(),
+                "roles", user.getRoles()
+        ));
     }
 }
