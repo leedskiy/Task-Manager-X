@@ -5,6 +5,7 @@ import io.leedsk1y.todolist_backend.models.Task;
 import io.leedsk1y.todolist_backend.models.User;
 import io.leedsk1y.todolist_backend.repositories.TaskRepository;
 import io.leedsk1y.todolist_backend.repositories.UserRepository;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -78,12 +79,33 @@ public class TaskService {
 
         boolean isOwner = task.getUser().getId().equals(user.getId());
         boolean isAdmin = user.getRoles().stream()
-                .anyMatch(role -> role.getName().equals("ROLE_ADMIN"));
+                .map(role -> role.getName().name())
+                .anyMatch(name -> name.equals("ROLE_ADMIN"));
 
         if (!isOwner && !isAdmin) {
             throw new RuntimeException("Access denied: You can only delete your own tasks or must be an admin.");
         }
 
         taskRepository.delete(task);
+    }
+
+    public List<Task> filterTasksForAuthenticatedUser(ETaskStatus status, LocalDateTime dueDateBefore, LocalDateTime dueDateAfter) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return taskRepository.findTasksByFilters(user.getId(), status, dueDateBefore, dueDateAfter);
+    }
+
+    public List<Task> sortTasksForAuthenticatedUser(String order) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Sort sort = order.equalsIgnoreCase("desc") ?
+                Sort.by(Sort.Direction.DESC, "dueDate")
+                : Sort.by(Sort.Direction.ASC, "dueDate");
+
+        return taskRepository.findByUserId(user.getId(), sort);
     }
 }

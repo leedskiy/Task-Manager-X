@@ -1,6 +1,7 @@
 package io.leedsk1y.todolist_backend.controllers;
 
 import io.leedsk1y.todolist_backend.dto.TaskResponseDTO;
+import io.leedsk1y.todolist_backend.models.ETaskStatus;
 import io.leedsk1y.todolist_backend.models.Task;
 import io.leedsk1y.todolist_backend.services.TaskService;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.UUID;
@@ -82,5 +84,39 @@ public class TaskController {
     public ResponseEntity<?> deleteTask(@PathVariable UUID id) {
         taskService.deleteTaskForAuthenticatedUserOrAdmin(id);
         return ResponseEntity.noContent().build(); // 204 No Content
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/filter")
+    public ResponseEntity<List<TaskResponseDTO>> filterTasks(
+            @RequestParam(required = false) ETaskStatus status,
+            @RequestParam(required = false) LocalDateTime dueDateBefore,
+            @RequestParam(required = false) LocalDateTime dueDateAfter,
+            @RequestParam(required = false) String expand) {
+
+        List<Task> filteredTasks = taskService.filterTasksForAuthenticatedUser(status, dueDateBefore, dueDateAfter);
+        boolean includeUser = "user".equals(expand);
+
+        List<TaskResponseDTO> responseDTOs = filteredTasks.stream()
+                .map(task -> new TaskResponseDTO(task, includeUser))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(responseDTOs);
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/sort")
+    public ResponseEntity<List<TaskResponseDTO>> sortTasks(
+            @RequestParam(defaultValue = "asc") String order,
+            @RequestParam(required = false) String expand) {
+
+        List<Task> sortedTasks = taskService.sortTasksForAuthenticatedUser(order);
+        boolean includeUser = "user".equals(expand);
+
+        List<TaskResponseDTO> responseDTOs = sortedTasks.stream()
+                .map(task -> new TaskResponseDTO(task, includeUser))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(responseDTOs);
     }
 }
