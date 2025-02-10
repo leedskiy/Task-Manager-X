@@ -6,10 +6,19 @@ import io.leedsk1y.todolist_backend.services.TaskService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/tasks")
@@ -35,6 +44,14 @@ public class TaskController {
     }
 
     @PreAuthorize("isAuthenticated()")
+    @GetMapping("/{id}")
+    public ResponseEntity<TaskResponseDTO> getTaskById(@PathVariable UUID id, @RequestParam(required = false) String expand) {
+        Task task = taskService.getTaskByIdForAuthenticatedUser(id);
+        boolean includeUser = "user".equals(expand);
+        return ResponseEntity.ok(new TaskResponseDTO(task, includeUser));
+    }
+
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<TaskResponseDTO> createTask(
             @RequestBody Task task,
@@ -45,5 +62,25 @@ public class TaskController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new TaskResponseDTO(createdTask, includeUser));
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PutMapping("/{id}")
+    public ResponseEntity<TaskResponseDTO> updateTask(
+            @PathVariable UUID id,
+            @RequestBody Task updatedTask,
+            @RequestParam(required = false) String expand) {
+
+        Task task = taskService.updateTaskForAuthenticatedUser(id, updatedTask);
+        boolean includeUser = "user".equals(expand);
+
+        return ResponseEntity.ok(new TaskResponseDTO(task, includeUser));
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteTask(@PathVariable UUID id) {
+        taskService.deleteTaskForAuthenticatedUserOrAdmin(id);
+        return ResponseEntity.noContent().build(); // 204 No Content
     }
 }
