@@ -1,8 +1,8 @@
 package io.leedsk1y.todolist_backend.controllers;
 
-import io.leedsk1y.todolist_backend.dto.LoginRequest;
-import io.leedsk1y.todolist_backend.dto.LoginResponse;
-import io.leedsk1y.todolist_backend.dto.RegisterRequest;
+import io.leedsk1y.todolist_backend.dto.LoginRequestDTO;
+import io.leedsk1y.todolist_backend.dto.LoginResponseDTO;
+import io.leedsk1y.todolist_backend.dto.RegisterRequestDTO;
 import io.leedsk1y.todolist_backend.models.User;
 import io.leedsk1y.todolist_backend.repositories.UserRepository;
 import io.leedsk1y.todolist_backend.security.jwt.JwtUtils;
@@ -36,7 +36,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@RequestBody RegisterRequestDTO request) {
         // check if user exists
         if (userRepository.existsByEmail(request.getEmail())) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
@@ -50,10 +50,10 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@RequestBody LoginRequestDTO request) {
         try {
             // authenticate user
-            LoginResponse response = authService.authenticateUser(request.getEmail(), request.getPassword());
+            LoginResponseDTO response = authService.authenticateUser(request.getEmail(), request.getPassword());
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             Map<String, Object> errorResponse = new HashMap<>();

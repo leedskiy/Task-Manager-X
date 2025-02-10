@@ -1,6 +1,6 @@
 package io.leedsk1y.todolist_backend.services;
 
-import io.leedsk1y.todolist_backend.dto.LoginResponse;
+import io.leedsk1y.todolist_backend.dto.LoginResponseDTO;
 import io.leedsk1y.todolist_backend.models.EAuthProvider;
 import io.leedsk1y.todolist_backend.models.ERole;
 import io.leedsk1y.todolist_backend.models.Role;
@@ -60,7 +60,7 @@ public class AuthService {
         return userRepository.save(user);
     }
 
-    public LoginResponse authenticateUser(String email, String password) {
+    public LoginResponseDTO authenticateUser(String email, String password) {
         try {
             // authenticate user
             Authentication authentication = authenticationManager.authenticate(
@@ -75,7 +75,7 @@ public class AuthService {
             // generate jwt token
             String jwtToken = jwtUtils.generateTokenFromUsername(userDetails);
 
-            return new LoginResponse(jwtToken, user.getId(), user.getEmail(),
+            return new LoginResponseDTO(jwtToken, user.getId(), user.getEmail(),
                     user.getProfileImage(), userDetails.getAuthorities(), user.getAuthProvider());
         } catch (AuthenticationException e) {
             throw new RuntimeException("Invalid email or password");
