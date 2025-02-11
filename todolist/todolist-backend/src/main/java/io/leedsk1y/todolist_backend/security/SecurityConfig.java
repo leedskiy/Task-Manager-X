@@ -60,7 +60,8 @@ public class SecurityConfig {
         http.authorizeHttpRequests(authorizeRequests ->
                 authorizeRequests
                         .requestMatchers("/h2-console", "/h2-console/**").permitAll() // (temp) allows all requests coming to h2-console
-                        .requestMatchers("/auth/register", "/auth/login", "/oauth2/**").permitAll() // security
+                        .requestMatchers("/auth/register", "/auth/login", "/oauth2/**").permitAll() // security endpoints
+                        .requestMatchers("/admin/**").hasRole("ADMIN") // admin endpoints
                         .anyRequest().authenticated());
 
         http.sessionManagement(session ->

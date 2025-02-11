@@ -108,4 +108,15 @@ public class TaskService {
 
         return taskRepository.findByUserId(user.getId(), sort);
     }
+
+    public List<Task> getAllTasks() {
+        return taskRepository.findAll();
+    }
+
+    public void deleteTaskByAdmin(UUID taskId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        taskRepository.delete(task);
+    }
 }
