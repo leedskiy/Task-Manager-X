@@ -1,7 +1,10 @@
 package io.leedsk1y.todolist_backend.controllers;
 
+import io.leedsk1y.todolist_backend.dto.LoginResponseDTO;
 import io.leedsk1y.todolist_backend.services.OAuth2Service;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -12,11 +15,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.net.URI;
 
 @RestController
 @RequestMapping("/oauth2/login")
 public class OAuth2Controller {
+    @Value("${spring.frontend.url}")
+    private String frontendUrl;
+
     private final OAuth2Service oAuthService;
 
     public OAuth2Controller(OAuth2Service oAuthService) {
@@ -30,18 +35,26 @@ public class OAuth2Controller {
     }
 
     @GetMapping("/success")
-    public ResponseEntity<? > handleGoogleSuccess(){
-        // get authentication
+    public void handleGoogleSuccess(HttpServletResponse response) throws IOException{
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (!(authentication instanceof OAuth2AuthenticationToken)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized: OAuth2 token is missing.");
+            response.sendError(HttpStatus.UNAUTHORIZED.value(), "Unauthorized: OAuth2 token is missing.");
+            return;
         }
         OAuth2AuthenticationToken auth2AuthenticationToken = (OAuth2AuthenticationToken) authentication;
 
-        // register or login
-        oAuthService.loginRegisterByGoogleOAuth2(auth2AuthenticationToken);
+        LoginResponseDTO loginResponse = oAuthService.loginRegisterByGoogleOAuth2(auth2AuthenticationToken);
 
-        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create("http://localhost:3000/dashboard")).build();
+        Cookie jwtCookie = new Cookie("token", loginResponse.getToken());
+        jwtCookie.setHttpOnly(false);
+        jwtCookie.setSecure(true);
+        jwtCookie.setPath("/");
+        jwtCookie.setMaxAge(60);
+        jwtCookie.setAttribute("SameSite", "None");
+
+        response.addCookie(jwtCookie);
+
+        response.sendRedirect(frontendUrl);
     }
 
     @GetMapping("/failure")

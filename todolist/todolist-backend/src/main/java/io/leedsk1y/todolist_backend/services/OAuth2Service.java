@@ -1,11 +1,13 @@
 package io.leedsk1y.todolist_backend.services;
 
+import io.leedsk1y.todolist_backend.dto.LoginResponseDTO;
 import io.leedsk1y.todolist_backend.models.EAuthProvider;
 import io.leedsk1y.todolist_backend.models.ERole;
 import io.leedsk1y.todolist_backend.models.Role;
 import io.leedsk1y.todolist_backend.models.User;
 import io.leedsk1y.todolist_backend.repositories.RoleRepository;
 import io.leedsk1y.todolist_backend.repositories.UserRepository;
+import io.leedsk1y.todolist_backend.security.jwt.JwtUtils;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
@@ -16,22 +18,35 @@ import java.util.Set;
 public class OAuth2Service {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final JwtUtils jwtUtils;
 
-    public OAuth2Service(UserRepository userRepository, RoleRepository roleRepository) {
+    public OAuth2Service(UserRepository userRepository, RoleRepository roleRepository, JwtUtils jwtUtils) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.jwtUtils = jwtUtils;
     }
 
     private String getEmail(OAuth2User oAuth2User) {
         return oAuth2User.getAttribute("email");
     }
 
-    public User loginRegisterByGoogleOAuth2(OAuth2AuthenticationToken auth2AuthenticationToken) {
+    public LoginResponseDTO loginRegisterByGoogleOAuth2(OAuth2AuthenticationToken auth2AuthenticationToken) {
         OAuth2User oAuth2User = auth2AuthenticationToken.getPrincipal();
         String email = getEmail(oAuth2User);
 
-        return userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email)
                 .orElseGet(() -> createNewOAuthUser(oAuth2User));
+
+        String jwtToken = jwtUtils.generateTokenFromUsername(user);
+
+        return new LoginResponseDTO(
+                jwtToken,
+                user.getId(),
+                user.getEmail(),
+                user.getProfileImage(),
+                user.getAuthorities(),
+                user.getAuthProvider()
+        );
     }
 
     private User createNewOAuthUser(OAuth2User oAuth2User) {

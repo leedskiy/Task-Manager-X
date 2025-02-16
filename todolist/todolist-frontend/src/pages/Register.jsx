@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 
 const Register = () => {
@@ -9,40 +10,34 @@ const Register = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const { login, fetchUserProfile } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
         try {
-            // register
             const registerResponse = await api.post('/auth/register', {
                 name,
                 email,
                 password,
             });
 
-            // if registered successfully, login
             if (registerResponse.status === 200) {
-                const loginResponse = await api.post('/auth/login', {
-                    email,
-                    password,
-                });
+                await login({ email, password });
 
-                const jwtToken = loginResponse.data.token;
-
-                if (jwtToken) {
-                    localStorage.setItem('token', jwtToken);
-                    navigate('/');
-                } else {
-                    setError('Login failed: Invalid credentials');
-                }
+                await fetchUserProfile();
+                navigate('/');
             } else {
                 setError('Registration failed');
             }
         } catch (err) {
             setError(err.response?.data?.message || 'An error occurred');
         }
+    };
+
+    const handleGoogleAuth = () => {
+        window.location.href = 'http://localhost:8080/oauth2/login/google';
     };
 
     return (
@@ -92,9 +87,16 @@ const Register = () => {
                 </div>
                 <button
                     type="submit"
-                    className="bg-gray-700 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded w-full"
+                    className="bg-gray-700 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded w-full mb-4"
                 >
                     Register
+                </button>
+                <button
+                    type="button"
+                    onClick={handleGoogleAuth}
+                    className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded w-full"
+                >
+                    Continue with Google
                 </button>
             </form>
             <p className="mt-4 font-bold">

@@ -4,9 +4,11 @@ spring:
   app:
     jwtSecret: ${JWT_SECRET}
     jwtExpirationMs: 3600000
+  frontend:
+    url: "http://localhost:5173"
   h2:
     console:
-     enabled: true
+      enabled: true
   datasource:
     url: jdbc:h2:mem:test
     driverClassName: org.h2.Driver
