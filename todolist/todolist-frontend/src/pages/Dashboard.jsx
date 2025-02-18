@@ -26,6 +26,21 @@ function Dashboard() {
         }
     };
 
+    const handleUpdateStatus = async (taskId, currentStatus) => {
+        const newStatus = currentStatus === 'PENDING' ? 'COMPLETED' : 'PENDING';
+
+        try {
+            const response = await api.put(`/tasks/${taskId}/status`, { status: newStatus });
+            const updatedTask = response.data;
+
+            setTasks(tasks.map(task =>
+                task.id === updatedTask.id ? { ...task, status: updatedTask.status } : task
+            ));
+        } catch (error) {
+            console.error('Failed to update task status:', error);
+        }
+    };
+
     useEffect(() => {
         if (isAuthenticated) {
             fetchTasks();
@@ -50,34 +65,30 @@ function Dashboard() {
                                     tasks.map((task) => (
                                         <div
                                             key={task.id}
-                                            className={`w-64 h-64 border-2 rounded-lg shadow-md p-4 bg-white flex flex-col ${task.status === 'PENDING' ? 'border-[#d1b062]' :
-                                                task.status === 'COMPLETED' ? 'border-[#5d9688]' :
+                                            className={`w-64 h-64 border-2 rounded-lg shadow-md p-4 bg-white flex flex-col ${task.status === 'PENDING' ? 'border-yellow-500' :
+                                                task.status === 'COMPLETED' ? 'border-green-500' :
                                                     'border-gray-300'
                                                 }`}
                                         >
-                                            <div>
-                                                <h2
-                                                    className="text-lg font-bold text-gray-800 truncate"
-                                                    title={task.title}
-                                                >
-                                                    {task.title.length > 25 ? `${task.title.substring(0, 25)}...` : task.title}
-                                                </h2>
+                                            <Link to={`/tasks/${task.id}`} className="text-lg font-bold text-gray-800 truncate hover:cursor-pointer">
+                                                {task.title.length > 25 ? `${task.title.substring(0, 25)}...` : task.title}
+                                            </Link>
 
-                                                <p className="text-gray-500 mt-4 text-sm">
-                                                    Due: {new Date(task.dueDate).toLocaleDateString('en-US', {
-                                                        month: '2-digit',
-                                                        day: '2-digit',
-                                                        year: 'numeric',
-                                                    }).replace(/\//g, '.')}
-                                                </p>
+                                            <p className="text-gray-500 mt-2 text-sm">
+                                                Due: {new Date(task.dueDate).toLocaleDateString('en-US', {
+                                                    month: '2-digit',
+                                                    day: '2-digit',
+                                                    year: 'numeric'
+                                                }).replace(/\//g, '.')}
+                                            </p>
 
-                                                <p className="text-gray-600 text-sm h-13 mt-4 overflow-hidden">
-                                                    {task.description != null ? task.description.length > 80 ? `${task.description.substring(0, 80)}...` : task.description : ''}
-                                                </p>
-                                            </div>
+                                            <p className="text-gray-600 text-sm mt-2 overflow-hidden">
+                                                {task.description?.length > 80 ? `${task.description.substring(0, 80)}...` : task.description}
+                                            </p>
 
                                             <div className="flex justify-between mt-auto">
                                                 <button
+                                                    onClick={() => handleUpdateStatus(task.id, task.status)}
                                                     className="px-4 py-2 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-900 transition"
                                                 >
                                                     Status
@@ -92,8 +103,9 @@ function Dashboard() {
                                         </div>
                                     ))
                                 ) : (
-                                    <p className="text-gray-500 text-lg">No tasks found. Start by adding a task.</p>
+                                    <p className="text-gray-500 text-lg">Start by adding a task.</p>
                                 )}
+
                             </div>
                         </div>
                     </>

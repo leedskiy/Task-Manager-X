@@ -1,42 +1,76 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import api from '../api/axios';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import Header from '../components/Header';
+import api from '../api/axios';
 
-const AddTask = () => {
+const ModifyTask = () => {
+    const { taskId } = useParams();
+    const navigate = useNavigate();
+
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [status, setStatus] = useState('');
     const [dueDate, setDueDate] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-    const navigate = useNavigate();
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchTask = async () => {
+            try {
+                const response = await api.get(`/tasks/${taskId}`);
+                const task = response.data;
+
+                setTitle(task.title);
+                setDescription(task.description);
+                setStatus(task.status);
+
+                if (task.dueDate) {
+                    setDueDate(task.dueDate.split('T')[0]);
+                } else {
+                    setDueDate('');
+                }
+            } catch (err) {
+                setError('Task not found');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTask();
+    }, [taskId]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setSuccess('');
 
-        const formattedDueDate = `${dueDate}T00:00:00`;
+        const formattedDueDate = dueDate ? new Date(dueDate).toISOString() : null;
 
         try {
-            const response = await api.post('/tasks', {
+            const response = await api.put(`/tasks/${taskId}`, {
                 title,
                 description,
+                status,
                 dueDate: formattedDueDate,
             });
 
-            if (response.status === 201) {
-                setSuccess('Task added successfully!');
+            if (response.status === 200) {
+                setSuccess('Task updated successfully!');
                 setTimeout(() => navigate('/'), 700);
             }
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to add task');
+        } catch (error) {
+            setError('Failed to update the task.');
         }
     };
 
     const handleCancel = () => {
         navigate('/');
     };
+
+    if (loading) {
+        return <div className="text-center text-gray-500">Loading...</div>;
+    }
 
     return (
         <div className="min-h-screen flex flex-col">
@@ -45,23 +79,13 @@ const AddTask = () => {
             <div className="flex-grow flex items-center justify-center px-4">
                 <div className="flex flex-col items-center w-full max-w-md">
                     <h2 className="text-3xl font-bold text-gray-700 mb-6 text-center">
-                        Add a New Task
+                        Modify Task
                     </h2>
-                    <form
-                        onSubmit={handleSubmit}
-                        className="bg-white shadow-md rounded px-8 pt-6 pb-8 w-96"
-                    >
+
+                    <form onSubmit={handleSubmit} className="bg-white shadow-md rounded px-8 pt-6 pb-8 w-96">
                         <div className="h-2 mb-4 text-center">
-                            {error && (
-                                <div className="text-red-500 text-sm font-bold">
-                                    {error}
-                                </div>
-                            )}
-                            {success && (
-                                <div className="text-green-500 text-sm font-bold">
-                                    {success}
-                                </div>
-                            )}
+                            {error && <div className="text-red-500 text-sm font-bold">{error}</div>}
+                            {success && <div className="text-green-500 text-sm font-bold">{success}</div>}
                         </div>
 
                         <div className="mb-4">
@@ -69,7 +93,6 @@ const AddTask = () => {
                             <input
                                 className="shadow appearance-none border rounded w-full py-2 px-3"
                                 type="text"
-                                placeholder="Task Title"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 required
@@ -80,11 +103,24 @@ const AddTask = () => {
                             <label className="block text-gray-700 text-sm font-bold mb-2">Description</label>
                             <textarea
                                 className="shadow appearance-none border rounded w-full py-2 px-3"
-                                placeholder="Task Description"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 rows="4"
                             />
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-gray-700 text-sm font-bold mb-2">Status</label>
+                            <select
+                                className="shadow appearance-none border rounded w-full py-2 px-3"
+                                value={status}
+                                onChange={(e) => setStatus(e.target.value)}
+                                required
+                            >
+                                <option value="">Select Status</option>
+                                <option value="PENDING">Pending</option>
+                                <option value="COMPLETED">Completed</option>
+                            </select>
                         </div>
 
                         <div className="mb-4">
@@ -94,7 +130,6 @@ const AddTask = () => {
                                 type="date"
                                 value={dueDate}
                                 onChange={(e) => setDueDate(e.target.value)}
-                                required
                             />
                         </div>
 
@@ -103,7 +138,7 @@ const AddTask = () => {
                                 type="submit"
                                 className="bg-gray-700 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded"
                             >
-                                Add Task
+                                Save Changes
                             </button>
                             <button
                                 type="button"
@@ -120,4 +155,4 @@ const AddTask = () => {
     );
 };
 
-export default AddTask;
+export default ModifyTask;

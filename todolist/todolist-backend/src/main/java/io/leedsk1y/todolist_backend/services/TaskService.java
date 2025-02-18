@@ -69,6 +69,19 @@ public class TaskService {
         return taskRepository.save(existingTask);
     }
 
+    public Task updateTaskStatusForAuthenticatedUser(UUID taskId, String status) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Task existingTask = taskRepository.findById(taskId)
+                .filter(task -> task.getUser().getId().equals(user.getId()))
+                .orElseThrow(() -> new RuntimeException("Task not found or access denied"));
+
+        existingTask.setStatus(ETaskStatus.valueOf(status));
+        return taskRepository.save(existingTask);
+    }
+
     public void deleteTaskForAuthenticatedUserOrAdmin(UUID taskId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)

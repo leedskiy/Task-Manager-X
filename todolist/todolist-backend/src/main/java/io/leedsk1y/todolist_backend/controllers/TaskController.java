@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.UUID;
 
@@ -74,6 +75,20 @@ public class TaskController {
             @RequestParam(required = false) String expand) {
 
         Task task = taskService.updateTaskForAuthenticatedUser(id, updatedTask);
+        boolean includeUser = "user".equals(expand);
+
+        return ResponseEntity.ok(new TaskResponseDTO(task, includeUser));
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PutMapping("/{id}/status")
+    public ResponseEntity<TaskResponseDTO> updateTaskStatus(
+            @PathVariable UUID id,
+            @RequestBody Map<String, String> statusUpdate,
+            @RequestParam(required = false) String expand) {
+
+        String status = statusUpdate.get("status");
+        Task task = taskService.updateTaskStatusForAuthenticatedUser(id, status);
         boolean includeUser = "user".equals(expand);
 
         return ResponseEntity.ok(new TaskResponseDTO(task, includeUser));
