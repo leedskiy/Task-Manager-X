@@ -2,12 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../api/axios';
 import { FaGoogle } from "react-icons/fa";
 
-
-const Register = () => {
-    const [name, setName] = useState('');
+const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -19,22 +16,11 @@ const Register = () => {
         setError('');
 
         try {
-            const registerResponse = await api.post('/auth/register', {
-                name,
-                email,
-                password,
-            });
-
-            if (registerResponse.status === 200) {
-                await login({ email, password });
-
-                await fetchUserProfile();
-                navigate('/');
-            } else {
-                setError('Registration failed');
-            }
+            await login({ email, password });
+            await fetchUserProfile();
+            navigate('/');
         } catch (err) {
-            setError(err.response?.data?.message || 'An error occurred');
+            setError(err.response?.data?.message || 'Invalid email or password');
         }
     };
 
@@ -44,7 +30,7 @@ const Register = () => {
 
     return (
         <div className="min-h-screen flex flex-col justify-center items-center">
-            <h2 className="text-3xl font-bold mb-6">Register</h2>
+            <h2 className="text-3xl font-bold mb-6">Login</h2>
             <form
                 onSubmit={handleSubmit}
                 className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 w-96"
@@ -54,17 +40,6 @@ const Register = () => {
                         {error}
                     </div>
                 )}
-                <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2">Name</label>
-                    <input
-                        className="shadow appearance-none border rounded w-full py-2 px-3"
-                        type="text"
-                        placeholder="Name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        required
-                    />
-                </div>
                 <div className="mb-4">
                     <label className="block text-gray-700 text-sm font-bold mb-2">Email</label>
                     <input
@@ -91,7 +66,7 @@ const Register = () => {
                     type="submit"
                     className="bg-gray-700 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded w-full mb-4"
                 >
-                    Register
+                    Login
                 </button>
                 <button
                     type="button"
@@ -103,11 +78,11 @@ const Register = () => {
                 </button>
             </form>
             <p className="mt-4 font-bold">
-                Already have an account?{' '}
-                <Link to="/login" className="text-blue-500">Login</Link>
+                Don't have an account?{' '}
+                <Link to="/register" className="text-blue-500">Register</Link>
             </p>
         </div>
     );
 };
 
-export default Register;
+export default Login;
