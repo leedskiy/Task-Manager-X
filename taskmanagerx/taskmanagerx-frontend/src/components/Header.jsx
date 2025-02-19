@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.png';
@@ -6,6 +6,7 @@ import logo from '../assets/logo.png';
 function Header() {
     const { user, isAuthenticated, logout } = useAuth();
     const [showMenu, setShowMenu] = useState(false);
+    const navigate = useNavigate();
 
     return (
         <header className="flex justify-between items-center bg-white py-3 px-8 shadow-md">
@@ -43,7 +44,10 @@ function Header() {
 
                             {showMenu && (
                                 <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg">
-                                    <div className="px-4 py-2 border-b text-black font-bold">
+                                    <div
+                                        className="px-4 py-2 border-b text-black font-bold cursor-pointer hover:bg-gray-200"
+                                        onClick={() => navigate('/profile')}
+                                    >
                                         {user?.name}
                                     </div>
                                     <button
