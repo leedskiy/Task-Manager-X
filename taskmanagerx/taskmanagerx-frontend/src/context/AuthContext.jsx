@@ -1,13 +1,13 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import api from '../api/axios';
 import { getTokenFromCookies } from '../api/axios';
-import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
     const [loading, setLoading] = useState(true);
 
     const fetchUserProfile = async () => {
@@ -15,9 +15,11 @@ export const AuthProvider = ({ children }) => {
             const response = await api.get('/auth/me');
             setUser(response.data);
             setIsAuthenticated(true);
+            setIsAdmin(response.data.roles.includes("ROLE_ADMIN"));
         } catch (error) {
             setUser(null);
             setIsAuthenticated(false);
+            setIsAdmin(false);
         } finally {
             setLoading(false);
         }
@@ -40,6 +42,7 @@ export const AuthProvider = ({ children }) => {
             localStorage.removeItem('token');
             setUser(null);
             setIsAuthenticated(false);
+            setIsAdmin(false);
             navigate('/');
         } catch (error) {
             console.error('Failed to log out:', error);
@@ -56,7 +59,7 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated, loading, login, logout, fetchUserProfile }}>
+        <AuthContext.Provider value={{ user, isAuthenticated, isAdmin, loading, login, logout, fetchUserProfile }}>
             {children}
         </AuthContext.Provider>
     );

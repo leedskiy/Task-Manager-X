@@ -16,6 +16,8 @@ import java.util.UUID;
 public interface TaskRepository extends JpaRepository<Task, UUID> {
     List<Task> findTasksByUserId (UUID userId);
 
+    List<Task> findTasksByUserId (UUID userId, Sort sort);
+
     @Query("SELECT t FROM Task t WHERE t.user.id = :userId " +
             "AND (:status IS NULL OR t.status = :status) " +
             "AND (:dueDateBefore IS NULL OR t.dueDate < :dueDateBefore) " +
@@ -26,5 +28,12 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
             @Param("dueDateBefore") LocalDateTime dueDateBefore,
             @Param("dueDateAfter") LocalDateTime dueDateAfter);
 
-    List<Task> findTasksByUserId (UUID userId, Sort sort);
+    @Query("SELECT t FROM Task t WHERE " +
+            "(:status IS NULL OR t.status = :status) " +
+            "AND (:dueDateBefore IS NULL OR t.dueDate < :dueDateBefore) " +
+            "AND (:dueDateAfter IS NULL OR t.dueDate > :dueDateAfter)")
+    List<Task> findTasksByFiltersForAdmin(
+            @Param("status") ETaskStatus status,
+            @Param("dueDateBefore") LocalDateTime dueDateBefore,
+            @Param("dueDateAfter") LocalDateTime dueDateAfter);
 }

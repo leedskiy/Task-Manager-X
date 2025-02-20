@@ -63,7 +63,7 @@ public class TaskController {
     @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteTask(@PathVariable UUID id) {
-        taskService.deleteTaskForAuthenticatedUserOrAdmin(id);
+        taskService.deleteTaskForAuthenticatedUser(id);
         return ResponseEntity.noContent().build();
     }
 

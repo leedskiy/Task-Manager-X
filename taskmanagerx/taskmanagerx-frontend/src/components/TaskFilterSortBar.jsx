@@ -1,7 +1,11 @@
 import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 
 const TaskFilterSortBar = ({ setTasks }) => {
+    const { user } = useAuth();
+    const isAdmin = user?.roles.includes("ROLE_ADMIN");
+
     const [status, setStatus] = useState("");
     const [dueDateBefore, setDueDateBefore] = useState("");
     const [dueDateAfter, setDueDateAfter] = useState("");
@@ -13,7 +17,8 @@ const TaskFilterSortBar = ({ setTasks }) => {
 
     const fetchFilteredTasks = async () => {
         try {
-            const response = await api.get("/tasks/filter", {
+            const endpoint = isAdmin ? "/admin/tasks/filter" : "/tasks/filter";
+            const response = await api.get(endpoint, {
                 params: {
                     status: status || null,
                     dueDateBefore: formatDateTime(dueDateBefore),
@@ -35,7 +40,8 @@ const TaskFilterSortBar = ({ setTasks }) => {
 
     const fetchSortedTasks = async () => {
         try {
-            const response = await api.get("/tasks/sort", {
+            const endpoint = isAdmin ? "/admin/tasks/sort" : "/tasks/sort";
+            const response = await api.get(endpoint, {
                 params: { order: sortOrder },
             });
 

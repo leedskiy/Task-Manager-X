@@ -79,18 +79,11 @@ public class TaskService {
         return new TaskResponseDTO(taskRepository.save(existingTask), false);
     }
 
-    public void deleteTaskForAuthenticatedUserOrAdmin(UUID taskId) {
+    public void deleteTaskForAuthenticatedUser(UUID taskId) {
         User user = getAuthenticatedUser();
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
-
-        boolean isOwner = task.getUser().getId().equals(user.getId());
-        boolean isAdmin = user.getRoles().stream()
-                .anyMatch(role -> role.getName().name().equals("ROLE_ADMIN"));
-
-        if (!isOwner && !isAdmin) {
-            throw new RuntimeException("Access denied: You can only delete your own tasks or must be an admin.");
-        }
+                .filter(t -> t.getUser().getId().equals(user.getId()))
+                .orElseThrow(() -> new RuntimeException("Task not found or access denied"));
 
         taskRepository.delete(task);
     }

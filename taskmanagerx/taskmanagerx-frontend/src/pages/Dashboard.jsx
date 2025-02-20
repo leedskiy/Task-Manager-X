@@ -8,10 +8,12 @@ import TaskFilterSortBar from "../components/TaskFilterSortBar";
 function Dashboard() {
     const { user, isAuthenticated, loading } = useAuth();
     const [tasks, setTasks] = useState([]);
+    const isAdmin = user?.roles.includes("ROLE_ADMIN");
 
     const fetchTasks = async () => {
         try {
-            const response = await api.get("/tasks");
+            const endpoint = isAdmin ? "/admin/tasks" : "/tasks";
+            const response = await api.get(endpoint);
             setTasks(response.data);
         } catch (error) {
             console.error("Failed to fetch tasks:", error);
@@ -20,7 +22,8 @@ function Dashboard() {
 
     const handleDeleteTask = async (taskId) => {
         try {
-            await api.delete(`/tasks/${taskId}`);
+            const endpoint = isAdmin ? `/admin/tasks/${taskId}` : `/tasks/${taskId}`;
+            await api.delete(endpoint);
             setTasks(tasks.filter(task => task.id !== taskId));
         } catch (error) {
             console.error("Failed to delete task:", error);
@@ -46,7 +49,7 @@ function Dashboard() {
         if (isAuthenticated) {
             fetchTasks();
         }
-    }, [isAuthenticated]);
+    }, [isAuthenticated, isAdmin]);
 
     return (
         <div>
@@ -54,17 +57,19 @@ function Dashboard() {
             <div className="p-8 text-center">
                 <h1 className="text-3xl text-gray-700 font-bold mb-6">Dashboard</h1>
 
-                {isAuthenticated && <TaskFilterSortBar setTasks={setTasks} />}
+                {isAuthenticated && <TaskFilterSortBar setTasks={setTasks} isAdmin={isAdmin} />}
 
                 <div className="mt-10">
                     {isAuthenticated ? (
                         <>
-                            <Link
-                                to="/add-task"
-                                className="px-6 py-3 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-900 transition"
-                            >
-                                Add a Task
-                            </Link>
+                            {!isAdmin && (
+                                <Link
+                                    to="/add-task"
+                                    className="px-6 py-3 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-900 transition"
+                                >
+                                    Add a Task
+                                </Link>
+                            )}
 
                             <div className="mt-10 mx-auto max-w-6xl">
                                 <div className="flex flex-wrap gap-4 justify-center">
@@ -73,10 +78,10 @@ function Dashboard() {
                                             <div
                                                 key={task.id}
                                                 className={`w-64 h-64 border-2 rounded-lg shadow-md p-4 bg-white flex flex-col ${task.status === "PENDING"
-                                                    ? "border-yellow-500"
-                                                    : task.status === "COMPLETED"
-                                                        ? "border-green-500"
-                                                        : "border-gray-300"
+                                                        ? "border-yellow-500"
+                                                        : task.status === "COMPLETED"
+                                                            ? "border-green-500"
+                                                            : "border-gray-300"
                                                     }`}
                                             >
                                                 <Link
@@ -99,19 +104,27 @@ function Dashboard() {
                                                         .replace(/\//g, ".")}
                                                 </p>
 
+                                                {isAdmin && (
+                                                    <p className="text-gray-500 mt-2 text-sm">
+                                                        Assigned to: <br /> {task.user.email}
+                                                    </p>
+                                                )}
+
                                                 <p className="text-gray-600 text-sm mt-2 overflow-hidden">
                                                     {task.description?.length > 80
                                                         ? `${task.description.substring(0, 80)}...`
                                                         : task.description}
                                                 </p>
 
-                                                <div className="flex justify-between mt-auto">
-                                                    <button
-                                                        onClick={() => handleUpdateStatus(task.id, task.status)}
-                                                        className="px-4 py-2 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-900 transition"
-                                                    >
-                                                        Status
-                                                    </button>
+                                                <div className={`flex ${isAdmin ? "justify-center" : "justify-between"} mt-auto`}>
+                                                    {!isAdmin && (
+                                                        <button
+                                                            onClick={() => handleUpdateStatus(task.id, task.status)}
+                                                            className="px-4 py-2 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-900 transition"
+                                                        >
+                                                            Status
+                                                        </button>
+                                                    )}
                                                     <button
                                                         onClick={() => handleDeleteTask(task.id)}
                                                         className="px-4 py-2 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-900 transition"
@@ -122,7 +135,9 @@ function Dashboard() {
                                             </div>
                                         ))
                                     ) : (
-                                        <p className="text-gray-500 text-lg">Start by adding a task.</p>
+                                        <p className="text-gray-500 text-lg">
+                                            {isAdmin ? "No tasks available." : "Start by adding a task."}
+                                        </p>
                                     )}
                                 </div>
                             </div>
