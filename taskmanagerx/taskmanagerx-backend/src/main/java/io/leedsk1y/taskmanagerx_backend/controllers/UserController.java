@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -26,7 +27,7 @@ public class UserController {
 
     private final UserRepository userRepository;
 
-    public UserController(UserRepository userRepository) {
+    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
     }
 
@@ -47,11 +48,11 @@ public class UserController {
                         .body(Map.of("message", "User not found", "status", false)));
     }
 
-    @PutMapping("/update")
+    @PutMapping("/me/name")
     public ResponseEntity<?> updateProfile(@RequestBody Map<String, String> updateData) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email).map(user -> {
-            user.setName(updateData.get("name")); // Only updating name
+            user.setName(updateData.get("name"));
             userRepository.save(user);
             return ResponseEntity.ok(Map.of("message", "Profile updated successfully"));
         }).orElse(ResponseEntity.status(404).body(Map.of("message", "User not found")));

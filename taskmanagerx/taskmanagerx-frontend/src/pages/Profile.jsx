@@ -9,8 +9,12 @@ const Profile = () => {
     const navigate = useNavigate();
 
     const [name, setName] = useState(user?.name || '');
+    const [oldPassword, setOldPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
     const [success, setSuccess] = useState('');
+    const [passwordSuccess, setPasswordSuccess] = useState('');
     const [error, setError] = useState('');
+    const [passwordError, setPasswordError] = useState('');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -22,13 +26,13 @@ const Profile = () => {
         }
     }, [user, navigate]);
 
-    const handleSubmit = async (e) => {
+    const handleUpdateProfile = async (e) => {
         e.preventDefault();
         setError('');
         setSuccess('');
 
         try {
-            const response = await api.put('/users/update', { name });
+            const response = await api.put('/users/me/name', { name });
 
             if (response.status === 200) {
                 setSuccess('Profile updated successfully!');
@@ -36,6 +40,32 @@ const Profile = () => {
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to update profile');
+        }
+    };
+
+    const handlePasswordChange = async (e) => {
+        e.preventDefault();
+        setPasswordError('');
+        setPasswordSuccess('');
+
+        if (!oldPassword || !newPassword) {
+            setPasswordError('Both password fields are required');
+            return;
+        }
+
+        try {
+            const response = await api.put('/auth/me/password', {
+                oldPassword,
+                newPassword
+            });
+
+            if (response.status === 200) {
+                setPasswordSuccess('Password updated successfully!');
+                setOldPassword('');
+                setNewPassword('');
+            }
+        } catch (err) {
+            setPasswordError(err.response?.data?.message || 'Failed to update password');
         }
     };
 
@@ -71,7 +101,7 @@ const Profile = () => {
                             </div>
                         </div>
 
-                        <form onSubmit={handleSubmit}>
+                        <form onSubmit={handleUpdateProfile}>
                             <div className="mb-4">
                                 <label className="block text-gray-700 text-sm font-bold mb-2">Email</label>
                                 <input
@@ -100,6 +130,52 @@ const Profile = () => {
                                 Save Changes
                             </button>
                         </form>
+
+                        {user.authProvider !== 'GOOGLE' && (
+                            <form onSubmit={handlePasswordChange} className="mt-6">
+                                <div className="h-2 mb-4 text-center">
+                                    {passwordError && (
+                                        <div className="text-red-500 text-sm font-bold">{passwordError}</div>
+                                    )}
+                                    {passwordSuccess && (
+                                        <div className="text-green-500 text-sm font-bold">{passwordSuccess}</div>
+                                    )}
+                                </div>
+
+                                <h3 className="text-lg font-bold text-gray-700 mb-4 text-center">Change Password</h3>
+
+                                <div className="mb-4">
+                                    <label className="block text-gray-700 text-sm font-bold mb-2">Old Password</label>
+                                    <input
+                                        className="shadow appearance-none border rounded w-full py-2 px-3"
+                                        type="password"
+                                        placeholder="Enter old password"
+                                        value={oldPassword}
+                                        onChange={(e) => setOldPassword(e.target.value)}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-gray-700 text-sm font-bold mb-2">New Password</label>
+                                    <input
+                                        className="shadow appearance-none border rounded w-full py-2 px-3"
+                                        type="password"
+                                        placeholder="Enter new password"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        required
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    className="bg-gray-700 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded w-full"
+                                >
+                                    Change Password
+                                </button>
+                            </form>
+                        )}
                     </div>
                 </div>
             </div>
