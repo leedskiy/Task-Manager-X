@@ -1,6 +1,8 @@
 package io.leedsk1y.taskmanagerx_backend.services;
 
 import io.leedsk1y.taskmanagerx_backend.dto.LoginResponseDTO;
+import io.leedsk1y.taskmanagerx_backend.dto.RegisterRequestDTO;
+import io.leedsk1y.taskmanagerx_backend.dto.UserDetailedResponseDTO;
 import io.leedsk1y.taskmanagerx_backend.models.EAuthProvider;
 import io.leedsk1y.taskmanagerx_backend.models.ERole;
 import io.leedsk1y.taskmanagerx_backend.models.Role;
@@ -38,41 +40,36 @@ public class AuthService {
         this.jwtUtils = jwtUtils;
     }
 
-    public User registerUser(String name, String email, String password) {
-        if (userRepository.existsByEmail(email)) {
+    public UserDetailedResponseDTO registerUser(RegisterRequestDTO request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email is already in use");
         }
 
-        // create user
         User user = new User();
-        user.setName(name);
-        user.setEmail(email);
-        user.setPassword(passwordEncoder.encode(password));
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setAuthProvider(EAuthProvider.DEFAULT);
 
-        // assign user role
         Set<Role> roles = new HashSet<>();
         Role userRole = roleRepository.findByName(ERole.ROLE_USER)
                 .orElseThrow(() -> new RuntimeException("Error: Role not found"));
         roles.add(userRole);
         user.setRoles(roles);
 
-        return userRepository.save(user);
+        return new UserDetailedResponseDTO(userRepository.save(user));
     }
 
     public LoginResponseDTO authenticateUser(String email, String password) {
         try {
-            // authenticate user
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(email, password));
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // get authenticated user details and fetch user
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             User user = userRepository.findByEmail(email.toLowerCase())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // generate jwt token
             String jwtToken = jwtUtils.generateTokenFromUsername(userDetails);
 
             return new LoginResponseDTO(jwtToken, user.getId(), user.getEmail(),
@@ -80,5 +77,32 @@ public class AuthService {
         } catch (AuthenticationException e) {
             throw new RuntimeException("Invalid email or password");
         }
+    }
+
+    public void logout(String token) {
+        if (token != null) {
+            jwtUtils.blacklistToken(token);
+        }
+        SecurityContextHolder.clearContext();
+    }
+
+    public UserDetailedResponseDTO getAuthenticatedUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return new UserDetailedResponseDTO(user);
+    }
+
+    public void updatePassword(String oldPassword, String newPassword) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new RuntimeException("Incorrect old password");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 }

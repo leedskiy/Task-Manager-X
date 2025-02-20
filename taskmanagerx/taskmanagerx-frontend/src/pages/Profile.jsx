@@ -19,7 +19,7 @@ const Profile = () => {
 
     useEffect(() => {
         if (!user) {
-            navigate('/login');
+            navigate('/');
         } else {
             setName(user.name);
             setLoading(false);
@@ -71,6 +71,10 @@ const Profile = () => {
 
     if (loading) {
         return <div className="text-center text-gray-500">Loading...</div>;
+    }
+
+    if (!user) {
+        return <div className="text-center text-gray-500">Redirecting...</div>;
     }
 
     return (

@@ -14,7 +14,7 @@ import java.util.UUID;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, UUID> {
-    List<Task> findByUserId(UUID userId);
+    List<Task> findTasksByUserId (UUID userId);
 
     @Query("SELECT t FROM Task t WHERE t.user.id = :userId " +
             "AND (:status IS NULL OR t.status = :status) " +
@@ -26,5 +26,5 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
             @Param("dueDateBefore") LocalDateTime dueDateBefore,
             @Param("dueDateAfter") LocalDateTime dueDateAfter);
 
-    List<Task> findByUserId(UUID userId, Sort sort);
+    List<Task> findTasksByUserId (UUID userId, Sort sort);
 }

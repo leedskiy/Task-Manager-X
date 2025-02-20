@@ -25,7 +25,7 @@ const AddTask = () => {
                 dueDate: formattedDueDate,
             });
 
-            if (response.status === 201) {
+            if (response.status === 200) {
                 setSuccess('Task added successfully!');
                 setTimeout(() => navigate('/'), 700);
             }

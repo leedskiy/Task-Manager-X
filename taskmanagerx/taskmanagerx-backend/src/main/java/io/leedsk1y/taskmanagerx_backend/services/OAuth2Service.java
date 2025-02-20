@@ -1,6 +1,7 @@
 package io.leedsk1y.taskmanagerx_backend.services;
 
 import io.leedsk1y.taskmanagerx_backend.dto.LoginResponseDTO;
+import io.leedsk1y.taskmanagerx_backend.dto.UserDetailedResponseDTO;
 import io.leedsk1y.taskmanagerx_backend.models.EAuthProvider;
 import io.leedsk1y.taskmanagerx_backend.models.ERole;
 import io.leedsk1y.taskmanagerx_backend.models.Role;
@@ -8,10 +9,12 @@ import io.leedsk1y.taskmanagerx_backend.models.User;
 import io.leedsk1y.taskmanagerx_backend.repositories.RoleRepository;
 import io.leedsk1y.taskmanagerx_backend.repositories.UserRepository;
 import io.leedsk1y.taskmanagerx_backend.security.jwt.JwtUtils;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -26,16 +29,13 @@ public class OAuth2Service {
         this.jwtUtils = jwtUtils;
     }
 
-    private String getEmail(OAuth2User oAuth2User) {
-        return oAuth2User.getAttribute("email");
-    }
-
-    public LoginResponseDTO loginRegisterByGoogleOAuth2(OAuth2AuthenticationToken auth2AuthenticationToken) {
+    public LoginResponseDTO handleOAuth2Authentication(OAuth2AuthenticationToken auth2AuthenticationToken) {
         OAuth2User oAuth2User = auth2AuthenticationToken.getPrincipal();
-        String email = getEmail(oAuth2User);
+        String email = Optional.ofNullable((String) oAuth2User.getAttribute("email"))
+                .orElseThrow(() -> new RuntimeException("OAuth2 authentication failed: Email not found"));
 
         User user = userRepository.findByEmail(email)
-                .orElseGet(() -> createNewOAuthUser(oAuth2User));
+                .orElseGet(() -> createNewUser (oAuth2User));
 
         String jwtToken = jwtUtils.generateTokenFromUsername(user);
 
@@ -49,9 +49,9 @@ public class OAuth2Service {
         );
     }
 
-    private User createNewOAuthUser(OAuth2User oAuth2User) {
+    private User createNewUser(OAuth2User oAuth2User) {
         User user = new User();
-        user.setEmail(getEmail(oAuth2User));
+        user.setEmail(oAuth2User.getAttribute("email"));
         user.setName(oAuth2User.getAttribute("name"));
         user.setProfileImage(oAuth2User.getAttribute("picture"));
         user.setPassword(null);
@@ -62,5 +62,16 @@ public class OAuth2Service {
         user.setRoles(Set.of(userRole));
 
         return userRepository.save(user);
+    }
+
+    public UserDetailedResponseDTO getAuthenticatedOAuth2User(Authentication authentication) {
+        if (!(authentication instanceof OAuth2AuthenticationToken)) {
+            throw new RuntimeException("Unauthorized: OAuth2 token is missing");
+        }
+
+        String email = ((OAuth2AuthenticationToken) authentication).getPrincipal().getAttribute("email");
+        return userRepository.findByEmail(email)
+                .map(UserDetailedResponseDTO::new)
+                .orElseThrow(() -> new RuntimeException("OAuth2 user not found"));
     }
 }

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import api from '../api/axios';
 import { getTokenFromCookies } from '../api/axios';
+import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext();
 
@@ -33,12 +34,13 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = async () => {
+    const logout = async (navigate) => {
         try {
             await api.post('/auth/logout');
             localStorage.removeItem('token');
             setUser(null);
             setIsAuthenticated(false);
+            navigate('/');
         } catch (error) {
             console.error('Failed to log out:', error);
         }

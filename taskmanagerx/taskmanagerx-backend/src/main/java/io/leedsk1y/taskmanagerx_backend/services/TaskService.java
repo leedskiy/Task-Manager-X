@@ -1,5 +1,6 @@
 package io.leedsk1y.taskmanagerx_backend.services;
 
+import io.leedsk1y.taskmanagerx_backend.dto.TaskResponseDTO;
 import io.leedsk1y.taskmanagerx_backend.models.ETaskStatus;
 import io.leedsk1y.taskmanagerx_backend.models.Task;
 import io.leedsk1y.taskmanagerx_backend.models.User;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class TaskService {
@@ -23,42 +25,40 @@ public class TaskService {
         this.userRepository = userRepository;
     }
 
-    public List<Task> getTasksForAuthenticatedUser() {
+    private User getAuthenticatedUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)
-                .map(user -> taskRepository.findByUserId(user.getId()))
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    public Task getTaskByIdForAuthenticatedUser(UUID taskId) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public List<TaskResponseDTO> getTasksForAuthenticatedUser() {
+        User user = getAuthenticatedUser();
+        return taskRepository.findTasksByUserId (user.getId())
+                .stream()
+                .map(task -> new TaskResponseDTO(task, false))
+                .collect(Collectors.toList());
+    }
 
-        return taskRepository.findById(taskId)
-                .filter(task -> task.getUser().getId().equals(user.getId()))
+    public TaskResponseDTO getTaskByIdForAuthenticatedUser(UUID taskId) {
+        User user = getAuthenticatedUser();
+        Task task = taskRepository.findById(taskId)
+                .filter(t -> t.getUser().getId().equals(user.getId()))
                 .orElseThrow(() -> new RuntimeException("Task not found or access denied"));
+        return new TaskResponseDTO(task, false);
     }
 
-    public Task createTask(Task task) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+    public TaskResponseDTO createTask(Task task) {
+        User user = getAuthenticatedUser();
         task.setUser(user);
         task.setStatus(ETaskStatus.PENDING);
         task.setCreatedAt(LocalDateTime.now());
-
-        return taskRepository.save(task);
+        return new TaskResponseDTO(taskRepository.save(task), false);
     }
 
-    public Task updateTaskForAuthenticatedUser(UUID taskId, Task updatedTask) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+    public TaskResponseDTO updateTaskForAuthenticatedUser(UUID taskId, Task updatedTask) {
+        User user = getAuthenticatedUser();
         Task existingTask = taskRepository.findById(taskId)
-                .filter(task -> task.getUser().getId().equals(user.getId()))
+                .filter(t -> t.getUser().getId().equals(user.getId()))
                 .orElseThrow(() -> new RuntimeException("Task not found or access denied"));
 
         existingTask.setTitle(updatedTask.getTitle());
@@ -66,34 +66,27 @@ public class TaskService {
         existingTask.setStatus(updatedTask.getStatus());
         existingTask.setDueDate(updatedTask.getDueDate());
 
-        return taskRepository.save(existingTask);
+        return new TaskResponseDTO(taskRepository.save(existingTask), false);
     }
 
-    public Task updateTaskStatusForAuthenticatedUser(UUID taskId, String status) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+    public TaskResponseDTO updateTaskStatusForAuthenticatedUser(UUID taskId, String status) {
+        User user = getAuthenticatedUser();
         Task existingTask = taskRepository.findById(taskId)
-                .filter(task -> task.getUser().getId().equals(user.getId()))
+                .filter(t -> t.getUser().getId().equals(user.getId()))
                 .orElseThrow(() -> new RuntimeException("Task not found or access denied"));
 
         existingTask.setStatus(ETaskStatus.valueOf(status));
-        return taskRepository.save(existingTask);
+        return new TaskResponseDTO(taskRepository.save(existingTask), false);
     }
 
     public void deleteTaskForAuthenticatedUserOrAdmin(UUID taskId) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+        User user = getAuthenticatedUser();
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
         boolean isOwner = task.getUser().getId().equals(user.getId());
         boolean isAdmin = user.getRoles().stream()
-                .map(role -> role.getName().name())
-                .anyMatch(name -> name.equals("ROLE_ADMIN"));
+                .anyMatch(role -> role.getName().name().equals("ROLE_ADMIN"));
 
         if (!isOwner && !isAdmin) {
             throw new RuntimeException("Access denied: You can only delete your own tasks or must be an admin.");
@@ -102,34 +95,23 @@ public class TaskService {
         taskRepository.delete(task);
     }
 
-    public List<Task> filterTasksForAuthenticatedUser(ETaskStatus status, LocalDateTime dueDateBefore, LocalDateTime dueDateAfter) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        return taskRepository.findTasksByFilters(user.getId(), status, dueDateBefore, dueDateAfter);
+    public List<TaskResponseDTO> filterTasksForAuthenticatedUser(ETaskStatus status, LocalDateTime dueDateBefore, LocalDateTime dueDateAfter) {
+        User user = getAuthenticatedUser();
+        return taskRepository.findTasksByFilters(user.getId(), status, dueDateBefore, dueDateAfter)
+                .stream()
+                .map(task -> new TaskResponseDTO(task, false))
+                .collect(Collectors.toList());
     }
 
-    public List<Task> sortTasksForAuthenticatedUser(String order) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+    public List<TaskResponseDTO> sortTasksForAuthenticatedUser(String order) {
+        User user = getAuthenticatedUser();
         Sort sort = order.equalsIgnoreCase("desc") ?
-                Sort.by(Sort.Direction.DESC, "dueDate")
-                : Sort.by(Sort.Direction.ASC, "dueDate");
+                Sort.by(Sort.Direction.DESC, "dueDate") :
+                Sort.by(Sort.Direction.ASC, "dueDate");
 
-        return taskRepository.findByUserId(user.getId(), sort);
-    }
-
-    public List<Task> getAllTasks() {
-        return taskRepository.findAll();
-    }
-
-    public void deleteTaskByAdmin(UUID taskId) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
-
-        taskRepository.delete(task);
+        return taskRepository.findTasksByUserId (user.getId(), sort)
+                .stream()
+                .map(task -> new TaskResponseDTO(task, false))
+                .collect(Collectors.toList());
     }
 }

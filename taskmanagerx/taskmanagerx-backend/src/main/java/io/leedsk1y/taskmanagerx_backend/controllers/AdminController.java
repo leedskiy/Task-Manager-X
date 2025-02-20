@@ -1,11 +1,8 @@
 package io.leedsk1y.taskmanagerx_backend.controllers;
 
 import io.leedsk1y.taskmanagerx_backend.dto.TaskResponseDTO;
-import io.leedsk1y.taskmanagerx_backend.dto.UserResponseDTO;
-import io.leedsk1y.taskmanagerx_backend.models.Task;
-import io.leedsk1y.taskmanagerx_backend.models.User;
-import io.leedsk1y.taskmanagerx_backend.services.TaskService;
-import io.leedsk1y.taskmanagerx_backend.services.UserService;
+import io.leedsk1y.taskmanagerx_backend.dto.UserDetailedResponseDTO;
+import io.leedsk1y.taskmanagerx_backend.services.AdminService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,54 +15,38 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
-    private final TaskService taskService;
-    private final UserService userService;
+    private final AdminService adminService;
 
-    public AdminController(TaskService taskService, UserService userService) {
-        this.taskService = taskService;
-        this.userService = userService;
+    public AdminController(AdminService adminService) {
+        this.adminService = adminService;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/tasks")
     public ResponseEntity<List<TaskResponseDTO>> getAllTasks() {
-        List<Task> tasks = taskService.getAllTasks();
-        List<TaskResponseDTO> responseDTOs = tasks.stream()
-                .map(task -> new TaskResponseDTO(task, true))
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(responseDTOs);
+        return ResponseEntity.ok(adminService.getAllTasks());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/tasks/{id}")
     public ResponseEntity<?> deleteTask(@PathVariable UUID id) {
-        taskService.deleteTaskByAdmin(id);
+        adminService.deleteTask(id);
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/users")
-    public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
-        List<User> users = userService.getAllUsers();
-        List<UserResponseDTO> responseDTOs = users.stream()
-                .map(UserResponseDTO::new)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(responseDTOs);
+    public ResponseEntity<List<UserDetailedResponseDTO>> getAllUsers() {
+        return ResponseEntity.ok(adminService.getAllUsers());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/users/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable UUID id) {
         try {
-            userService.deleteUserByAdmin(id);
+            adminService.deleteUser(id);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

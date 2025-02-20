@@ -51,7 +51,7 @@ function Header() {
                                         {user?.name}
                                     </div>
                                     <button
-                                        onClick={logout}
+                                        onClick={() => logout(navigate)}
                                         className="w-full text-left px-4 py-2 text-red-500 hover:bg-red-100 transition"
                                     >
                                         Sign out

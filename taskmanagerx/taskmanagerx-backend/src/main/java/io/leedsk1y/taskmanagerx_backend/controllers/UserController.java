@@ -1,13 +1,10 @@
 package io.leedsk1y.taskmanagerx_backend.controllers;
 
-import io.leedsk1y.taskmanagerx_backend.models.User;
-import io.leedsk1y.taskmanagerx_backend.repositories.UserRepository;
-import org.springframework.http.HttpStatus;
+import io.leedsk1y.taskmanagerx_backend.dto.UserDetailedResponseDTO;
+import io.leedsk1y.taskmanagerx_backend.services.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -17,77 +14,44 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/users")
 public class UserController {
 
-    private final UserRepository userRepository;
+    private final UserService userService;
 
-    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getAuthenticatedUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        return userRepository.findByEmail(email)
-                .map(user -> ResponseEntity.ok(Map.of(
-                        "id", user.getId(),
-                        "name", user.getName(),
-                        "email", user.getEmail(),
-                        "profileImage", Optional.ofNullable(user.getProfileImage()).orElse(""),
-                        "roles", user.getRoles(),
-                        "authProvider", user.getAuthProvider()
-                )))
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("message", "User not found", "status", false)));
+    public ResponseEntity<UserDetailedResponseDTO> getAuthenticatedUser() {
+        return ResponseEntity.ok(userService.getAuthenticatedUser());
     }
 
     @PutMapping("/me/name")
-    public ResponseEntity<?> updateProfile(@RequestBody Map<String, String> updateData) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByEmail(email).map(user -> {
-            user.setName(updateData.get("name"));
-            userRepository.save(user);
-            return ResponseEntity.ok(Map.of("message", "Profile updated successfully"));
-        }).orElse(ResponseEntity.status(404).body(Map.of("message", "User not found")));
+    public ResponseEntity<UserDetailedResponseDTO> updateProfile(@RequestBody Map<String, String> updateData) {
+        return ResponseEntity.ok(userService.updateUserProfile(updateData.get("name")));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable UUID id) {
-        return userRepository.findById(id)
-                .map(user -> ResponseEntity.ok(Map.of(
-                        "id", user.getId(),
-                        "name", user.getName(),
-                        "email", user.getEmail(),
-                        "profileImage", Optional.ofNullable(user.getProfileImage()).orElse(""),
-                        "roles", user.getRoles(),
-                        "authProvider", user.getAuthProvider()
-                )))
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("message", "User not found", "status", false)));
+    public ResponseEntity<UserDetailedResponseDTO> getUserById(@PathVariable UUID id) {
+        return ResponseEntity.ok(userService.getUserById(id));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<?> getAllUsers() {
-        List<User> users = userRepository.findAll();
+    public ResponseEntity<List<UserDetailedResponseDTO>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
+    }
 
-        List<Map<String, Object>> userList = users.stream().map(user -> Map.of(
-                "id", user.getId(),
-                "name", user.getName(),
-                "email", user.getEmail(),
-                "profileImage", Optional.ofNullable(user.getProfileImage()).orElse(""),
-                "roles", user.getRoles(),
-                "authProvider", user.getAuthProvider()
-        )).collect(Collectors.toList());
-
-        return ResponseEntity.ok(userList);
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable UUID id) {
+        userService.deleteUserByAdmin(id);
+        return ResponseEntity.noContent().build();
     }
 }

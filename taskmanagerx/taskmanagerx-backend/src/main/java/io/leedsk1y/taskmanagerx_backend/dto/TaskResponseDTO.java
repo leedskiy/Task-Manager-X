@@ -15,7 +15,7 @@ public class TaskResponseDTO {
     private final ETaskStatus status;
     private final LocalDateTime dueDate;
     private final UUID userId;
-    private final UserResponseDTO user; // included only if requested
+    private final UserBasicDTO user; // included only if requested
 
     public TaskResponseDTO(Task task, boolean includeUser) {
         this.id = task.getId();
@@ -24,6 +24,6 @@ public class TaskResponseDTO {
         this.status = task.getStatus();
         this.dueDate = task.getDueDate();
         this.userId = task.getUser().getId();
-        this.user = includeUser ? new UserResponseDTO(task.getUser()) : null;
+        this.user = includeUser ? new UserBasicDTO(task.getUser()) : null;
     }
 }
