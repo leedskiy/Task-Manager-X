@@ -26,6 +26,25 @@ public class AdminService {
                 .collect(Collectors.toList());
     }
 
+    public TaskResponseDTO getTaskByIdForAdmin(UUID taskId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        return new TaskResponseDTO(task, true);
+    }
+
+    public TaskResponseDTO updateTaskByAdmin(UUID taskId, Task updatedTask) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        task.setTitle(updatedTask.getTitle());
+        task.setDescription(updatedTask.getDescription());
+        task.setStatus(updatedTask.getStatus());
+        task.setDueDate(updatedTask.getDueDate());
+
+        return new TaskResponseDTO(taskRepository.save(task), true);
+    }
+
     public void deleteTask(UUID taskId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));

@@ -2,10 +2,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
 
 const ModifyTask = () => {
     const { taskId } = useParams();
     const navigate = useNavigate();
+    const { isAdmin } = useAuth();
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -18,18 +20,14 @@ const ModifyTask = () => {
     useEffect(() => {
         const fetchTask = async () => {
             try {
-                const response = await api.get(`/tasks/${taskId}`);
+                const endpoint = isAdmin ? `/admin/tasks/${taskId}` : `/tasks/${taskId}`;
+                const response = await api.get(endpoint);
                 const task = response.data;
 
                 setTitle(task.title);
                 setDescription(task.description);
                 setStatus(task.status);
-
-                if (task.dueDate) {
-                    setDueDate(task.dueDate.split('T')[0]);
-                } else {
-                    setDueDate('');
-                }
+                setDueDate(task.dueDate?.split('T')[0] || '');
             } catch (err) {
                 setError('Task not found');
             } finally {
@@ -38,7 +36,7 @@ const ModifyTask = () => {
         };
 
         fetchTask();
-    }, [taskId]);
+    }, [taskId, isAdmin]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -46,9 +44,10 @@ const ModifyTask = () => {
         setSuccess('');
 
         const formattedDueDate = dueDate ? new Date(dueDate).toISOString() : null;
+        const endpoint = isAdmin ? `/admin/tasks/${taskId}` : `/tasks/${taskId}`;
 
         try {
-            const response = await api.put(`/tasks/${taskId}`, {
+            const response = await api.put(endpoint, {
                 title,
                 description,
                 status,
@@ -75,12 +74,9 @@ const ModifyTask = () => {
     return (
         <div className="min-h-screen flex flex-col">
             <Header />
-
             <div className="flex-grow flex items-center justify-center px-4">
                 <div className="flex flex-col items-center w-full max-w-md">
-                    <h2 className="text-3xl font-bold text-gray-700 mb-6 text-center">
-                        Modify Task
-                    </h2>
+                    <h2 className="text-3xl font-bold text-gray-700 mb-6 text-center">Modify Task</h2>
 
                     <form onSubmit={handleSubmit} className="bg-white shadow-md rounded px-8 pt-6 pb-8 w-96">
                         <div className="h-2 mb-4 text-center">

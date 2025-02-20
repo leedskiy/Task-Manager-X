@@ -35,6 +35,16 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getAllTasks());
     }
 
+    @GetMapping("/tasks/{id}")
+    public ResponseEntity<TaskResponseDTO> getTaskByIdForAdmin(@PathVariable UUID id) {
+        return ResponseEntity.ok(adminService.getTaskByIdForAdmin(id));
+    }
+
+    @PutMapping("/tasks/{id}")
+    public ResponseEntity<TaskResponseDTO> updateTaskByAdmin(@PathVariable UUID id, @RequestBody Task updatedTask) {
+        return ResponseEntity.ok(adminService.updateTaskByAdmin(id, updatedTask));
+    }
+
     @DeleteMapping("/tasks/{id}")
     public ResponseEntity<?> deleteTask(@PathVariable UUID id) {
         adminService.deleteTask(id);
