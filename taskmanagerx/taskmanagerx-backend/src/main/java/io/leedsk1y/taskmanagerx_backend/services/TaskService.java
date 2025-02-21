@@ -25,20 +25,33 @@ public class TaskService {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Retrieves the currently authenticated user.
+     * @return The authenticated User object.
+     */
     private User getAuthenticatedUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
+    /**
+     * Retrieves all tasks for the authenticated user.
+     * @return List of tasks as TaskResponseDTO.
+     */
     public List<TaskResponseDTO> getTasksForAuthenticatedUser() {
         User user = getAuthenticatedUser();
-        return taskRepository.findTasksByUserId (user.getId())
+        return taskRepository.findTasksByUserId(user.getId())
                 .stream()
                 .map(task -> new TaskResponseDTO(task, false))
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Retrieves a specific task by ID for the authenticated user.
+     * @param taskId Task UUID.
+     * @return TaskResponseDTO containing task details.
+     */
     public TaskResponseDTO getTaskByIdForAuthenticatedUser(UUID taskId) {
         User user = getAuthenticatedUser();
         Task task = taskRepository.findById(taskId)
@@ -47,6 +60,11 @@ public class TaskService {
         return new TaskResponseDTO(task, false);
     }
 
+    /**
+     * Creates a new task for the authenticated user.
+     * @param task Task details.
+     * @return TaskResponseDTO containing the created task details.
+     */
     public TaskResponseDTO createTask(Task task) {
         User user = getAuthenticatedUser();
         task.setUser(user);
@@ -55,6 +73,12 @@ public class TaskService {
         return new TaskResponseDTO(taskRepository.save(task), false);
     }
 
+    /**
+     * Updates an existing task for the authenticated user.
+     * @param taskId Task UUID.
+     * @param updatedTask Updated task details.
+     * @return TaskResponseDTO containing the updated task details.
+     */
     public TaskResponseDTO updateTaskForAuthenticatedUser(UUID taskId, Task updatedTask) {
         User user = getAuthenticatedUser();
         Task existingTask = taskRepository.findById(taskId)
@@ -69,6 +93,12 @@ public class TaskService {
         return new TaskResponseDTO(taskRepository.save(existingTask), false);
     }
 
+    /**
+     * Updates the status of a task for the authenticated user.
+     * @param taskId Task UUID.
+     * @param status New task status.
+     * @return TaskResponseDTO containing the updated task details.
+     */
     public TaskResponseDTO updateTaskStatusForAuthenticatedUser(UUID taskId, String status) {
         User user = getAuthenticatedUser();
         Task existingTask = taskRepository.findById(taskId)
@@ -79,6 +109,10 @@ public class TaskService {
         return new TaskResponseDTO(taskRepository.save(existingTask), false);
     }
 
+    /**
+     * Deletes a task for the authenticated user.
+     * @param taskId Task UUID.
+     */
     public void deleteTaskForAuthenticatedUser(UUID taskId) {
         User user = getAuthenticatedUser();
         Task task = taskRepository.findById(taskId)
@@ -88,6 +122,13 @@ public class TaskService {
         taskRepository.delete(task);
     }
 
+    /**
+     * Filters tasks for the authenticated user based on status and due date range.
+     * @param status Task status.
+     * @param dueDateBefore Filter tasks due before this date.
+     * @param dueDateAfter Filter tasks due after this date.
+     * @return List of filtered tasks as TaskResponseDTO.
+     */
     public List<TaskResponseDTO> filterTasksForAuthenticatedUser(ETaskStatus status, LocalDateTime dueDateBefore, LocalDateTime dueDateAfter) {
         User user = getAuthenticatedUser();
         return taskRepository.findTasksByFilters(user.getId(), status, dueDateBefore, dueDateAfter)
@@ -96,13 +137,18 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Sorts tasks for the authenticated user based on due date.
+     * @param order Sorting order ("asc" or "desc").
+     * @return List of sorted tasks as TaskResponseDTO.
+     */
     public List<TaskResponseDTO> sortTasksForAuthenticatedUser(String order) {
         User user = getAuthenticatedUser();
         Sort sort = order.equalsIgnoreCase("desc") ?
                 Sort.by(Sort.Direction.DESC, "dueDate") :
                 Sort.by(Sort.Direction.ASC, "dueDate");
 
-        return taskRepository.findTasksByUserId (user.getId(), sort)
+        return taskRepository.findTasksByUserId(user.getId(), sort)
                 .stream()
                 .map(task -> new TaskResponseDTO(task, false))
                 .collect(Collectors.toList());

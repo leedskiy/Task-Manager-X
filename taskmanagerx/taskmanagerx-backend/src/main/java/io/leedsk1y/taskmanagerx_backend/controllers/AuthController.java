@@ -28,6 +28,11 @@ public class AuthController {
         this.jwtUtils = jwtUtils;
     }
 
+    /**
+     * Handles user registration.
+     * @param request The registration request containing user details.
+     * @return ResponseEntity with the registered user details or an error message.
+     */
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequestDTO request) {
         try {
@@ -38,6 +43,11 @@ public class AuthController {
         }
     }
 
+    /**
+     * Handles user login.
+     * @param request The login request containing user email and password.
+     * @return ResponseEntity with authentication token or an error message.
+     */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequestDTO request) {
         try {
@@ -48,6 +58,11 @@ public class AuthController {
         }
     }
 
+    /**
+     * Handles user logout.
+     * @param request The HTTP request containing authentication token.
+     * @return ResponseEntity with logout confirmation message.
+     */
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request) {
         String token = jwtUtils.getJwtFromHeader(request);
@@ -55,11 +70,20 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "User logged out successfully", "status", true));
     }
 
+    /**
+     * Retrieves the authenticated user's details.
+     * @return ResponseEntity with user details.
+     */
     @GetMapping("/me")
     public ResponseEntity<UserDetailedResponseDTO> getAuthenticatedUser() {
         return ResponseEntity.ok(authService.getAuthenticatedUser());
     }
 
+    /**
+     * Updates the authenticated user's password.
+     * @param passwordData A map containing old and new passwords.
+     * @return ResponseEntity with a success or error message.
+     */
     @PutMapping("/me/password")
     public ResponseEntity<?> updatePassword(@RequestBody Map<String, String> passwordData) {
         try {

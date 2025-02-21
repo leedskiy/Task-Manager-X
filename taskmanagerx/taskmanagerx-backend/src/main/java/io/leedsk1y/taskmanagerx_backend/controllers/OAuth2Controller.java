@@ -28,11 +28,21 @@ public class OAuth2Controller {
         this.oAuth2Service = oAuth2Service;
     }
 
+    /**
+     * Redirects the user to Google's OAuth2 authentication page.
+     * @param response The HTTP response object for redirection.
+     * @throws IOException If an error occurs during redirection.
+     */
     @GetMapping("/google")
     public void redirectToGoogleAuth(HttpServletResponse response) throws IOException {
         response.sendRedirect("/oauth2/authorization/google");
     }
 
+    /**
+     * Creates an authentication cookie with the provided JWT token.
+     * @param token The JWT token to be stored in the cookie.
+     * @return A configured Cookie object.
+     */
     private Cookie createAuthCookie(String token) {
         Cookie jwtCookie = new Cookie("token", token);
         jwtCookie.setHttpOnly(false);
@@ -43,6 +53,12 @@ public class OAuth2Controller {
         return jwtCookie;
     }
 
+    /**
+     * Handles successful OAuth2 authentication and issues a JWT token.
+     * @param response The HTTP response object for setting the authentication cookie.
+     * @param authentication The authentication object containing user details.
+     * @throws IOException If an error occurs during redirection.
+     */
     @GetMapping("/success")
     public void handleOAuth2Success(HttpServletResponse response, Authentication authentication) throws IOException {
         try {
@@ -56,11 +72,20 @@ public class OAuth2Controller {
         }
     }
 
+    /**
+     * Handles failed OAuth2 authentication attempts.
+     * @return ResponseEntity with an error message.
+     */
     @GetMapping("/failure")
     public ResponseEntity<String> handleOAuth2Failure() {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("OAuth2 login failed");
     }
 
+    /**
+     * Retrieves the authenticated OAuth2 user details.
+     * @param authentication The authentication object containing user details.
+     * @return ResponseEntity with the authenticated user's details.
+     */
     @GetMapping("/me")
     public ResponseEntity<UserDetailedResponseDTO> getOAuth2AuthenticatedUser(Authentication authentication) {
         return ResponseEntity.ok(oAuth2Service.getAuthenticatedOAuth2User(authentication));

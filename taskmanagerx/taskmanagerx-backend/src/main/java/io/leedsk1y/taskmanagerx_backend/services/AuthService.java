@@ -40,6 +40,11 @@ public class AuthService {
         this.jwtUtils = jwtUtils;
     }
 
+    /**
+     * Registers a new user.
+     * @param request The registration request containing user details.
+     * @return The registered user as UserDetailedResponseDTO.
+     */
     public UserDetailedResponseDTO registerUser(RegisterRequestDTO request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email is already in use");
@@ -60,6 +65,12 @@ public class AuthService {
         return new UserDetailedResponseDTO(userRepository.save(user));
     }
 
+    /**
+     * Authenticates a user and generates a JWT token.
+     * @param email The user's email.
+     * @param password The user's password.
+     * @return LoginResponseDTO containing the JWT token and user details.
+     */
     public LoginResponseDTO authenticateUser(String email, String password) {
         try {
             Authentication authentication = authenticationManager.authenticate(
@@ -79,6 +90,10 @@ public class AuthService {
         }
     }
 
+    /**
+     * Logs out the user by blacklisting the JWT token.
+     * @param token The JWT token to be blacklisted.
+     */
     public void logout(String token) {
         if (token != null) {
             jwtUtils.blacklistToken(token);
@@ -86,6 +101,10 @@ public class AuthService {
         SecurityContextHolder.clearContext();
     }
 
+    /**
+     * Retrieves the currently authenticated user.
+     * @return UserDetailedResponseDTO containing the user details.
+     */
     public UserDetailedResponseDTO getAuthenticatedUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
@@ -93,6 +112,11 @@ public class AuthService {
         return new UserDetailedResponseDTO(user);
     }
 
+    /**
+     * Updates the password of the authenticated user.
+     * @param oldPassword The user's current password.
+     * @param newPassword The new password to be set.
+     */
     public void updatePassword(String oldPassword, String newPassword) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
