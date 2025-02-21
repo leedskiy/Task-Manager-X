@@ -1,5 +1,6 @@
 package io.leedsk1y.taskmanagerx_backend.services;
 
+import io.leedsk1y.taskmanagerx_backend.dto.CreateTaskRequestDTO;
 import io.leedsk1y.taskmanagerx_backend.dto.TaskResponseDTO;
 import io.leedsk1y.taskmanagerx_backend.dto.UserDetailedResponseDTO;
 import io.leedsk1y.taskmanagerx_backend.models.ETaskStatus;
@@ -38,6 +39,21 @@ public class AdminService {
         return new TaskResponseDTO(task, true);
     }
 
+    public TaskResponseDTO createTaskByAdmin(CreateTaskRequestDTO taskRequest) {
+        User user = userRepository.findById(taskRequest.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Task newTask = new Task();
+        newTask.setTitle(taskRequest.getTitle());
+        newTask.setDescription(taskRequest.getDescription());
+        newTask.setDueDate(taskRequest.getDueDate());
+        newTask.setUser(user);
+        newTask.setStatus(ETaskStatus.PENDING);
+        newTask.setCreatedAt(LocalDateTime.now());
+
+        return new TaskResponseDTO(taskRepository.save(newTask), true);
+    }
+
     public TaskResponseDTO updateTaskByAdmin(UUID taskId, Task updatedTask) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
@@ -46,6 +62,18 @@ public class AdminService {
         task.setDescription(updatedTask.getDescription());
         task.setStatus(updatedTask.getStatus());
         task.setDueDate(updatedTask.getDueDate());
+
+        return new TaskResponseDTO(taskRepository.save(task), true);
+    }
+
+    public TaskResponseDTO reassignTask(UUID taskId, UUID newUserId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        User newUser = userRepository.findById(newUserId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        task.setUser(newUser);
 
         return new TaskResponseDTO(taskRepository.save(task), true);
     }

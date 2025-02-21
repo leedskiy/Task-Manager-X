@@ -62,14 +62,12 @@ function Dashboard() {
                 <div className="mt-10">
                     {isAuthenticated ? (
                         <>
-                            {!isAdmin && (
-                                <Link
-                                    to="/add-task"
-                                    className="px-6 py-3 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-900 transition"
-                                >
-                                    Add a Task
-                                </Link>
-                            )}
+                            <Link
+                                to="/add-task"
+                                className="px-6 py-3 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-900 transition"
+                            >
+                                Add a Task
+                            </Link>
 
                             <div className="mt-10 mx-auto max-w-6xl">
                                 <div className="flex flex-wrap gap-4 justify-center">
@@ -78,10 +76,10 @@ function Dashboard() {
                                             <div
                                                 key={task.id}
                                                 className={`w-64 h-64 border-2 rounded-lg shadow-md p-4 bg-white flex flex-col ${task.status === "PENDING"
-                                                        ? "border-yellow-500"
-                                                        : task.status === "COMPLETED"
-                                                            ? "border-green-500"
-                                                            : "border-gray-300"
+                                                    ? "border-yellow-500"
+                                                    : task.status === "COMPLETED"
+                                                        ? "border-green-500"
+                                                        : "border-gray-300"
                                                     }`}
                                             >
                                                 <Link
@@ -117,6 +115,13 @@ function Dashboard() {
                                                 </p>
 
                                                 <div className={`flex ${isAdmin ? "justify-center" : "justify-between"} mt-auto`}>
+                                                    <button
+                                                        onClick={() => handleDeleteTask(task.id)}
+                                                        className="px-4 py-2 bg-gray-400 text-white font-semibold rounded-lg hover:bg-gray-900 transition"
+                                                    >
+                                                        Delete
+                                                    </button>
+
                                                     {!isAdmin && (
                                                         <button
                                                             onClick={() => handleUpdateStatus(task.id, task.status)}
@@ -125,12 +130,6 @@ function Dashboard() {
                                                             Status
                                                         </button>
                                                     )}
-                                                    <button
-                                                        onClick={() => handleDeleteTask(task.id)}
-                                                        className="px-4 py-2 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-900 transition"
-                                                    >
-                                                        Delete
-                                                    </button>
                                                 </div>
                                             </div>
                                         ))

@@ -13,11 +13,22 @@ const ModifyTask = () => {
     const [description, setDescription] = useState('');
     const [status, setStatus] = useState('');
     const [dueDate, setDueDate] = useState('');
+    const [selectedUserId, setSelectedUserId] = useState('');
+    const [users, setUsers] = useState([]);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const response = await api.get('/admin/users');
+                setUsers(response.data);
+            } catch (err) {
+                console.error("Failed to fetch users", err);
+            }
+        };
+
         const fetchTask = async () => {
             try {
                 const endpoint = isAdmin ? `/admin/tasks/${taskId}` : `/tasks/${taskId}`;
@@ -28,6 +39,7 @@ const ModifyTask = () => {
                 setDescription(task.description);
                 setStatus(task.status);
                 setDueDate(task.dueDate?.split('T')[0] || '');
+                setSelectedUserId(task.userId);
             } catch (err) {
                 setError('Task not found');
             } finally {
@@ -36,6 +48,10 @@ const ModifyTask = () => {
         };
 
         fetchTask();
+
+        if (isAdmin) {
+            fetchUsers();
+        }
     }, [taskId, isAdmin]);
 
     const handleSubmit = async (e) => {
@@ -53,6 +69,10 @@ const ModifyTask = () => {
                 status,
                 dueDate: formattedDueDate,
             });
+
+            if (isAdmin && selectedUserId) {
+                await api.put(`/admin/tasks/${taskId}/reassign`, { userId: selectedUserId });
+            }
 
             if (response.status === 200) {
                 setSuccess('Task updated successfully!');
@@ -119,6 +139,24 @@ const ModifyTask = () => {
                             </select>
                         </div>
 
+                        {isAdmin && (
+                            <div className="mb-4">
+                                <label className="block text-gray-700 text-sm font-bold mb-2">Assign to User</label>
+                                <select
+                                    className="shadow appearance-none border rounded w-full py-2 px-3"
+                                    value={selectedUserId}
+                                    onChange={(e) => setSelectedUserId(e.target.value)}
+                                    required
+                                >
+                                    {users.map(user => (
+                                        <option key={user.id} value={user.id}>
+                                            {user.email}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
                         <div className="mb-4">
                             <label className="block text-gray-700 text-sm font-bold mb-2">Due Date</label>
                             <input
@@ -131,17 +169,17 @@ const ModifyTask = () => {
 
                         <div className="flex justify-between mt-6">
                             <button
-                                type="submit"
-                                className="bg-gray-700 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded"
-                            >
-                                Save Changes
-                            </button>
-                            <button
                                 type="button"
                                 onClick={handleCancel}
                                 className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded"
                             >
                                 Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="bg-gray-700 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded"
+                            >
+                                Save Changes
                             </button>
                         </div>
                     </form>

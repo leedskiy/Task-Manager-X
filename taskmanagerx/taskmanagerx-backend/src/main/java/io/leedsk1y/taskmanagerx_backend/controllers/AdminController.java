@@ -1,5 +1,6 @@
 package io.leedsk1y.taskmanagerx_backend.controllers;
 
+import io.leedsk1y.taskmanagerx_backend.dto.CreateTaskRequestDTO;
 import io.leedsk1y.taskmanagerx_backend.dto.TaskResponseDTO;
 import io.leedsk1y.taskmanagerx_backend.dto.UserDetailedResponseDTO;
 import io.leedsk1y.taskmanagerx_backend.models.ETaskStatus;
@@ -10,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -41,9 +44,23 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getTaskByIdForAdmin(id));
     }
 
+    @PostMapping("/tasks")
+    public ResponseEntity<TaskResponseDTO> createTaskByAdmin(@RequestBody CreateTaskRequestDTO taskRequest) {
+        return ResponseEntity.ok(adminService.createTaskByAdmin(taskRequest));
+    }
+
     @PutMapping("/tasks/{id}")
     public ResponseEntity<TaskResponseDTO> updateTaskByAdmin(@PathVariable UUID id, @RequestBody Task updatedTask) {
         return ResponseEntity.ok(adminService.updateTaskByAdmin(id, updatedTask));
+    }
+
+    @PutMapping("/tasks/{id}/reassign")
+    public ResponseEntity<TaskResponseDTO> reassignTask(
+            @PathVariable UUID id,
+            @RequestBody Map<String, UUID> requestData) {
+
+        UUID newUserId = requestData.get("userId");
+        return ResponseEntity.ok(adminService.reassignTask(id, newUserId));
     }
 
     @DeleteMapping("/tasks/{id}")
