@@ -1,6 +1,7 @@
 package io.leedsk1y.taskmanagerx_backend.controllers;
 
 import io.leedsk1y.taskmanagerx_backend.dto.TaskResponseDTO;
+import io.leedsk1y.taskmanagerx_backend.dto.UserDetailedResponseDTO;
 import io.leedsk1y.taskmanagerx_backend.models.ETaskStatus;
 import io.leedsk1y.taskmanagerx_backend.models.Task;
 import io.leedsk1y.taskmanagerx_backend.services.AdminService;
@@ -61,5 +62,21 @@ public class AdminController {
     @GetMapping("/tasks/sort")
     public ResponseEntity<List<TaskResponseDTO>> sortTasks(@RequestParam(defaultValue = "asc") String order) {
         return ResponseEntity.ok(adminService.sortTasksForAdmin(order));
+    }
+
+    @GetMapping("users")
+    public ResponseEntity<List<UserDetailedResponseDTO>> getAllUsers() {
+        return ResponseEntity.ok(adminService.getAllUsers());
+    }
+
+    @GetMapping("/users/{id}")
+    public ResponseEntity<UserDetailedResponseDTO> getUserById(@PathVariable UUID id) {
+        return ResponseEntity.ok(adminService.getUserById(id));
+    }
+
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable UUID id) {
+        adminService.deleteUserByAdmin(id);
+        return ResponseEntity.noContent().build();
     }
 }
