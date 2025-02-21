@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import AddTask from './pages/AddTask';
 import ModifyTask from './pages/ModifyTask';
 import Profile from './pages/Profile';
+import Users from './pages/Users';
 
 const App = () => {
   return (
@@ -18,6 +19,7 @@ const App = () => {
           <Route path="/add-task" element={<AddTask />} />
           <Route path="/tasks/:taskId" element={<ModifyTask />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/users" element={<Users />} />
         </Routes>
       </Router>
     </AuthProvider>

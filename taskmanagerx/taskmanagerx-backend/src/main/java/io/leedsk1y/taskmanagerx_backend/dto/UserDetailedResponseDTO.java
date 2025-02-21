@@ -3,6 +3,7 @@ package io.leedsk1y.taskmanagerx_backend.dto;
 import io.leedsk1y.taskmanagerx_backend.models.User;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -13,6 +14,7 @@ public class UserDetailedResponseDTO {
     private final String name;
     private final String email;
     private final String profileImage;
+    private final LocalDateTime createdAt;
     private final Set<String> roles;
     private final String authProvider;
 
@@ -21,6 +23,7 @@ public class UserDetailedResponseDTO {
         this.name = user.getName();
         this.email = user.getEmail();
         this.profileImage = user.getProfileImage();
+        this.createdAt = user.getCreatedAt();
         this.roles = user.getRoles().stream()
                 .map(role -> role.getName().name())
                 .collect(Collectors.toSet());

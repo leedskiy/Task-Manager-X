@@ -3,6 +3,7 @@ package io.leedsk1y.taskmanagerx_backend.services;
 import io.leedsk1y.taskmanagerx_backend.dto.CreateTaskRequestDTO;
 import io.leedsk1y.taskmanagerx_backend.dto.TaskResponseDTO;
 import io.leedsk1y.taskmanagerx_backend.dto.UserDetailedResponseDTO;
+import io.leedsk1y.taskmanagerx_backend.models.ERole;
 import io.leedsk1y.taskmanagerx_backend.models.ETaskStatus;
 import io.leedsk1y.taskmanagerx_backend.models.Task;
 import io.leedsk1y.taskmanagerx_backend.models.User;
@@ -116,6 +117,19 @@ public class AdminService {
     public void deleteUserByAdmin(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        boolean isAdmin = user.getRoles().stream()
+                .anyMatch(role -> role.getName().equals(ERole.ROLE_ADMIN));
+
+        if (isAdmin) {
+            throw new RuntimeException("Cannot delete an admin user.");
+        }
+
+        taskRepository.deleteAll(taskRepository.findTasksByUserId(userId));
+
+        user.getRoles().clear();
+        userRepository.save(user);
+
         userRepository.delete(user);
     }
 }

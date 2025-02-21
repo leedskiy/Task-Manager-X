@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.png';
 
 function Header() {
-    const { user, isAuthenticated, logout } = useAuth();
+    const { user, isAuthenticated, logout, isAdmin } = useAuth();
     const [showMenu, setShowMenu] = useState(false);
     const navigate = useNavigate();
 
@@ -50,6 +50,16 @@ function Header() {
                                     >
                                         {user?.name}
                                     </div>
+
+                                    {isAdmin && (
+                                        <Link
+                                            to="/users"
+                                            className="block px-4 py-2 text-gray-700 hover:bg-gray-200 transition cursor-pointer"
+                                        >
+                                            Users
+                                        </Link>
+                                    )}
+
                                     <button
                                         onClick={() => logout(navigate)}
                                         className="w-full text-left px-4 py-2 text-red-500 hover:bg-red-100 transition"
