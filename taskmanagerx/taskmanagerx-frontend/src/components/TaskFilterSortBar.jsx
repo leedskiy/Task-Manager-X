@@ -75,7 +75,7 @@ const TaskFilterSortBar = ({ setTasks }) => {
                 )}
 
                 <div className="flex flex-col w-40">
-                    <label className="text-gray-600 text-sm font-semibold mb-1">Sort Order</label>
+                    <label className="text-gray-600 text-sm font-semibold mb-1">Sort Order {!isAdmin ? "(due date)" : ""}</label>
                     <select
                         className="border rounded p-2"
                         value={sortOrder}

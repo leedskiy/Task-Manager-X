@@ -117,7 +117,7 @@ function Dashboard() {
                                                 <div className={`flex ${isAdmin ? "justify-center" : "justify-between"} mt-auto`}>
                                                     <button
                                                         onClick={() => handleDeleteTask(task.id)}
-                                                        className="px-4 py-2 bg-gray-400 text-white font-semibold rounded-lg hover:bg-gray-900 transition"
+                                                        className="px-4 py-2 bg-gray-400 text-white font-semibold rounded-lg hover:bg-gray-600 transition"
                                                     >
                                                         Delete
                                                     </button>

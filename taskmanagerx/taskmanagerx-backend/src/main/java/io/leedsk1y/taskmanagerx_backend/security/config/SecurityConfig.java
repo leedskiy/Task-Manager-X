@@ -1,4 +1,4 @@
-package io.leedsk1y.taskmanagerx_backend.security;
+package io.leedsk1y.taskmanagerx_backend.security.config;
 
 import io.leedsk1y.taskmanagerx_backend.repositories.UserRepository;
 import io.leedsk1y.taskmanagerx_backend.security.jwt.AuthEntryPointJwt;
@@ -60,9 +60,9 @@ public class SecurityConfig {
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(authorizeRequests ->
                 authorizeRequests
-                        .requestMatchers("/h2-console", "/h2-console/**").permitAll() // (temp) allows all requests coming to h2-console
                         .requestMatchers("/auth/register", "/auth/login", "/oauth2/**").permitAll() // security endpoints
                         .requestMatchers("/admin/**").hasRole("ADMIN") // admin endpoints
+//                        .requestMatchers("/h2-console", "/h2-console/**").permitAll() // (temp) allows all requests coming to h2-console
                         .anyRequest().authenticated());
 
         http.sessionManagement(session ->
