@@ -1,19 +1,23 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import api from '../api/axios';
-import Header from '../components/Header';
-import { useAuth } from '../context/AuthContext';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
+import Header from "../components/Header";
+import { useAuth } from "../context/AuthContext";
+import ConfirmModal from "../components/ConfirmModal";
 
 const Users = () => {
     const { isAdmin } = useAuth();
     const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const [error, setError] = useState("");
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState(null);
 
     useEffect(() => {
         if (!isAdmin) {
-            navigate('/');
+            navigate("/");
         } else {
             fetchUsers();
         }
@@ -21,26 +25,32 @@ const Users = () => {
 
     const fetchUsers = async () => {
         try {
-            const response = await api.get('/admin/users');
+            const response = await api.get("/admin/users");
             setUsers(response.data);
         } catch (error) {
-            setError('Failed to fetch users');
+            setError("Failed to fetch users");
         } finally {
             setLoading(false);
         }
     };
 
-    const deleteUser = async (userId) => {
-        if (!window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
-            return;
-        }
+    const handleDeleteClick = (user) => {
+        setUserToDelete(user);
+        setIsModalOpen(true);
+    };
+
+    const confirmDeleteUser = async () => {
+        if (!userToDelete) return;
 
         try {
-            await api.delete(`/admin/users/${userId}`);
-            setUsers(users.filter(user => user.id !== userId));
+            await api.delete(`/admin/users/${userToDelete.id}`);
+            setUsers(users.filter((user) => user.id !== userToDelete.id));
         } catch (error) {
             console.error("Failed to delete user:", error);
             alert("Error: Unable to delete user.");
+        } finally {
+            setIsModalOpen(false);
+            setUserToDelete(null);
         }
     };
 
@@ -66,11 +76,18 @@ const Users = () => {
                     <p className="text-red-500">{error}</p>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl">
-                        {users.map(user => (
-                            <div key={user.id} className="bg-white p-4 border rounded-lg shadow-md flex flex-col items-center">
+                        {users.map((user) => (
+                            <div
+                                key={user.id}
+                                className="bg-white p-4 border rounded-lg shadow-md flex flex-col items-center"
+                            >
                                 <div className="w-20 h-20 flex items-center justify-center rounded-full bg-gray-300 overflow-hidden">
                                     {user.profileImage ? (
-                                        <img src={user.profileImage} alt="User" className="w-full h-full object-cover" />
+                                        <img
+                                            src={user.profileImage}
+                                            alt="User"
+                                            className="w-full h-full object-cover"
+                                        />
                                     ) : (
                                         <span className="text-2xl font-bold text-black">
                                             {user.name.charAt(0).toUpperCase()}
@@ -80,9 +97,7 @@ const Users = () => {
 
                                 <h3 className="text-lg font-bold text-gray-800 mt-2">{user.name}</h3>
 
-                                <p className="text-gray-500 text-sm">
-                                    {user.email}
-                                </p>
+                                <p className="text-gray-500 text-sm">{user.email}</p>
 
                                 <p className="text-gray-500 text-sm mt-1">
                                     <span className="font-semibold">Joined: </span>
@@ -97,16 +112,26 @@ const Users = () => {
                                 <p className="text-gray-500 text-sm">
                                     <span className="font-semibold">Roles: </span>
                                     {user.roles.length > 0
-                                        ? user.roles.map(role => role === "ROLE_ADMIN" ? "admin" : role === "ROLE_USER" ? "user" : role).join(', ')
-                                        : 'No roles assigned'}
+                                        ? user.roles
+                                            .map((role) =>
+                                                role === "ROLE_ADMIN"
+                                                    ? "admin"
+                                                    : role === "ROLE_USER"
+                                                        ? "user"
+                                                        : role
+                                            )
+                                            .join(", ")
+                                        : "No roles assigned"}
                                 </p>
 
                                 {user.roles.includes("ROLE_ADMIN") ? (
-                                    <p className="text-gray-400 font-semibold mt-3">Admin cannot be deleted</p>
+                                    <p className="text-gray-400 font-semibold mt-3">
+                                        Admin cannot be deleted
+                                    </p>
                                 ) : (
                                     <button
-                                        onClick={() => deleteUser(user.id)}
-                                        className="mt-4 px-4 py-2 bg-gray-400 text-white font-semibold rounded-lg hover:bg-gray-900 transition"
+                                        onClick={() => handleDeleteClick(user)}
+                                        className="mt-4 px-4 py-2 bg-gray-400 text-white font-semibold rounded-lg hover:bg-gray-600 transition"
                                     >
                                         Delete User
                                     </button>
@@ -116,6 +141,14 @@ const Users = () => {
                     </div>
                 )}
             </div>
+
+            <ConfirmModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onConfirm={confirmDeleteUser}
+                title="Confirm Delete"
+                message={`Are you sure you want to delete user "${userToDelete?.name}"? This action is irreversible.`}
+            />
         </div>
     );
 };

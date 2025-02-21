@@ -37,6 +37,12 @@ public class OAuth2Service {
         User user = userRepository.findByEmail(email)
                 .orElseGet(() -> createNewUser (oAuth2User));
 
+        String profileImageUrl = oAuth2User.getAttribute("picture");
+        if (profileImageUrl != null && !profileImageUrl.equals(user.getProfileImage())) {
+            user.setProfileImage(profileImageUrl);
+            userRepository.save(user);
+        }
+
         String jwtToken = jwtUtils.generateTokenFromUsername(user);
 
         return new LoginResponseDTO(

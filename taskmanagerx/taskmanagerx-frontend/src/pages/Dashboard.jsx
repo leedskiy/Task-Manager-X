@@ -1,14 +1,18 @@
-import Header from "../components/Header";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useState, useEffect } from "react";
 import api from "../api/axios";
+import Header from "../components/Header";
 import TaskFilterSortBar from "../components/TaskFilterSortBar";
+import ConfirmModal from "../components/ConfirmModal";
 
 function Dashboard() {
-    const { user, isAuthenticated, loading } = useAuth();
+    const { user, isAuthenticated } = useAuth();
     const [tasks, setTasks] = useState([]);
     const isAdmin = user?.roles.includes("ROLE_ADMIN");
+
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [taskToDelete, setTaskToDelete] = useState(null);
 
     const fetchTasks = async () => {
         try {
@@ -17,16 +21,6 @@ function Dashboard() {
             setTasks(response.data);
         } catch (error) {
             console.error("Failed to fetch tasks:", error);
-        }
-    };
-
-    const handleDeleteTask = async (taskId) => {
-        try {
-            const endpoint = isAdmin ? `/admin/tasks/${taskId}` : `/tasks/${taskId}`;
-            await api.delete(endpoint);
-            setTasks(tasks.filter(task => task.id !== taskId));
-        } catch (error) {
-            console.error("Failed to delete task:", error);
         }
     };
 
@@ -50,6 +44,26 @@ function Dashboard() {
             fetchTasks();
         }
     }, [isAuthenticated, isAdmin]);
+
+    const handleDeleteClick = (task) => {
+        setTaskToDelete(task);
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDeleteTask = async () => {
+        if (!taskToDelete) return;
+
+        try {
+            const endpoint = isAdmin ? `/admin/tasks/${taskToDelete.id}` : `/tasks/${taskToDelete.id}`;
+            await api.delete(endpoint);
+            setTasks(tasks.filter(task => task.id !== taskToDelete.id));
+        } catch (error) {
+            console.error("Failed to delete task:", error);
+        } finally {
+            setIsDeleteModalOpen(false);
+            setTaskToDelete(null);
+        }
+    };
 
     return (
         <div>
@@ -116,7 +130,7 @@ function Dashboard() {
 
                                                 <div className={`flex ${isAdmin ? "justify-center" : "justify-between"} mt-auto`}>
                                                     <button
-                                                        onClick={() => handleDeleteTask(task.id)}
+                                                        onClick={() => handleDeleteClick(task)}
                                                         className="px-4 py-2 bg-gray-400 text-white font-semibold rounded-lg hover:bg-gray-600 transition"
                                                     >
                                                         Delete
@@ -148,6 +162,14 @@ function Dashboard() {
                     )}
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={confirmDeleteTask}
+                title="Delete Task"
+                message={`Are you sure you want to delete task "${taskToDelete?.title}"? This action is irreversible.`}
+            />
         </div>
     );
 }

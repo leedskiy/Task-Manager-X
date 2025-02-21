@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>io.leedsk1y</groupId>
 	<artifactId>taskmanagerx-backend</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.1.0</version>
 	<name>TaskManagerX</name>
 	<description>Spring Boot backend for the To-Do List App</description>
 	<url/>

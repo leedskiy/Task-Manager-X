@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import api from '../api/axios';
-import Header from '../components/Header';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import api from "../api/axios";
+import Header from "../components/Header";
+import ConfirmModal from "../components/ConfirmModal";
 
 const Profile = () => {
-    const { user, fetchUserProfile } = useAuth();
+    const { user, fetchUserProfile, logout, isAdmin } = useAuth();
     const navigate = useNavigate();
 
     const [name, setName] = useState(user?.name || '');
@@ -16,6 +17,7 @@ const Profile = () => {
     const [error, setError] = useState('');
     const [passwordError, setPasswordError] = useState('');
     const [loading, setLoading] = useState(true);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
     useEffect(() => {
         if (!user) {
@@ -74,6 +76,17 @@ const Profile = () => {
         }
     };
 
+    const handleDeleteAccount = async () => {
+        try {
+            await api.delete('/users/me', { withCredentials: true });
+            logout(navigate);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to delete account');
+        } finally {
+            setIsDeleteModalOpen(false);
+        }
+    };
+
     if (loading) return <div className="text-center text-gray-500">Loading...</div>;
     if (!user) return <div className="text-center text-gray-500">Redirecting...</div>;
 
@@ -91,7 +104,7 @@ const Profile = () => {
                         {user?.profileImage ? (
                             <img src={user.profileImage} alt="Profile" className="w-full h-full rounded-full object-cover" />
                         ) : (
-                            <span className="text-5xl font-bold text-black">{user?.name?.charAt(0).toUpperCase()}</span>
+                            <span className="text-5xl font-bold text-black select-none">{user?.name?.charAt(0).toUpperCase()}</span>
                         )}
                     </div>
 
@@ -142,8 +155,25 @@ const Profile = () => {
                             <div className="h-2"></div>
                         )}
                     </div>
+
+                    {!isAdmin && (
+                        <button
+                            onClick={() => setIsDeleteModalOpen(true)}
+                            className="mt-4 px-4 py-2 bg-gray-400 text-white font-semibold rounded-lg hover:bg-gray-600 transition w-full"
+                        >
+                            Delete Account
+                        </button>
+                    )}
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleDeleteAccount}
+                title="Delete Account"
+                message="Are you sure you want to delete your account? This action is irreversible."
+            />
         </div>
     );
 };

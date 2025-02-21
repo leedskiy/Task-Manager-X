@@ -36,7 +36,7 @@ function Header() {
                                 {user?.profileImage ? (
                                     <img src={user.profileImage} alt="Profile" className="w-full h-full rounded-full object-cover" />
                                 ) : (
-                                    <span className="text-lg font-bold text-black">
+                                    <span className="text-lg font-bold text-black select-none">
                                         {user?.name?.charAt(0).toUpperCase()}
                                     </span>
                                 )}

@@ -3,8 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 
 const TaskFilterSortBar = ({ setTasks }) => {
-    const { user } = useAuth();
-    const isAdmin = user?.roles.includes("ROLE_ADMIN");
+    const { user, isAdmin } = useAuth();
 
     const [status, setStatus] = useState("");
     const [dueDateBefore, setDueDateBefore] = useState("");
