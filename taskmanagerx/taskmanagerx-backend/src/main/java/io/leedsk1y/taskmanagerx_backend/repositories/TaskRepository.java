@@ -28,12 +28,12 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
             @Param("dueDateBefore") LocalDateTime dueDateBefore,
             @Param("dueDateAfter") LocalDateTime dueDateAfter);
 
-    @Query("SELECT t FROM Task t WHERE " +
-            "(:status IS NULL OR t.status = :status) " +
+    @Query("SELECT t FROM Task t WHERE (:status IS NULL OR t.status = :status) " +
             "AND (:dueDateBefore IS NULL OR t.dueDate < :dueDateBefore) " +
-            "AND (:dueDateAfter IS NULL OR t.dueDate > :dueDateAfter)")
-    List<Task> findTasksByFiltersForAdmin(
-            @Param("status") ETaskStatus status,
-            @Param("dueDateBefore") LocalDateTime dueDateBefore,
-            @Param("dueDateAfter") LocalDateTime dueDateAfter);
+            "AND (:dueDateAfter IS NULL OR t.dueDate > :dueDateAfter) " +
+            "AND (:userId IS NULL OR t.user.id = :userId)")
+    List<Task> findTasksByFiltersForAdminAndUser(@Param("userId") UUID userId,
+                                                 @Param("status") ETaskStatus status,
+                                                 @Param("dueDateBefore") LocalDateTime dueDateBefore,
+                                                 @Param("dueDateAfter") LocalDateTime dueDateAfter);
 }

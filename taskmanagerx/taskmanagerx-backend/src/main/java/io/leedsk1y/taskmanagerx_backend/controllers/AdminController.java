@@ -70,15 +70,17 @@ public class AdminController {
     }
 
     @GetMapping("/tasks/filter")
-    public ResponseEntity<List<TaskResponseDTO>> filterTasks(@RequestParam(required = false) ETaskStatus status,
+    public ResponseEntity<List<TaskResponseDTO>> filterTasks(@RequestParam(required = false) String userEmail,
+                                                             @RequestParam(required = false) ETaskStatus status,
                                                              @RequestParam(required = false) LocalDateTime dueDateBefore,
                                                              @RequestParam(required = false) LocalDateTime dueDateAfter) {
-        return ResponseEntity.ok(adminService.filterTasksForAdmin(status, dueDateBefore, dueDateAfter));
+        return ResponseEntity.ok(adminService.filterTasksForAdmin(userEmail, status, dueDateBefore, dueDateAfter));
     }
 
     @GetMapping("/tasks/sort")
-    public ResponseEntity<List<TaskResponseDTO>> sortTasks(@RequestParam(defaultValue = "asc") String order) {
-        return ResponseEntity.ok(adminService.sortTasksForAdmin(order));
+    public ResponseEntity<List<TaskResponseDTO>> sortTasks(@RequestParam(required = false) String sortBy,
+                                                           @RequestParam(defaultValue = "asc") String order) {
+        return ResponseEntity.ok(adminService.sortTasksForAdmin(sortBy, order));
     }
 
     @GetMapping("users")

@@ -85,17 +85,29 @@ public class AdminService {
         taskRepository.delete(task);
     }
 
-    public List<TaskResponseDTO> filterTasksForAdmin(ETaskStatus status, LocalDateTime dueDateBefore, LocalDateTime dueDateAfter) {
-        return taskRepository.findTasksByFiltersForAdmin(status, dueDateBefore, dueDateAfter)
-                .stream()
-                .map(task -> new TaskResponseDTO(task, true))
-                .collect(Collectors.toList());
+    public List<TaskResponseDTO> filterTasksForAdmin(String userEmail, ETaskStatus status, LocalDateTime dueDateBefore, LocalDateTime dueDateAfter) {
+        UUID userId = null;
+
+        if (userEmail != null && !userEmail.isEmpty()) {
+            User user = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            userId = user.getId();
+        }
+
+        List<Task> tasks = taskRepository.findTasksByFiltersForAdminAndUser(userId, status, dueDateBefore, dueDateAfter);
+
+        return tasks.stream().map(task -> new TaskResponseDTO(task, true)).collect(Collectors.toList());
     }
 
-    public List<TaskResponseDTO> sortTasksForAdmin(String order) {
-        Sort sort = order.equalsIgnoreCase("desc") ?
-                Sort.by(Sort.Direction.DESC, "dueDate") :
-                Sort.by(Sort.Direction.ASC, "dueDate");
+    public List<TaskResponseDTO> sortTasksForAdmin(String sortBy, String order) {
+        Sort.Direction direction = order.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Sort sort;
+
+        if ("userEmail".equalsIgnoreCase(sortBy)) {
+            sort = Sort.by(direction, "user.email");
+        } else {
+            sort = Sort.by(direction, "dueDate");
+        }
 
         return taskRepository.findAll(sort).stream()
                 .map(task -> new TaskResponseDTO(task, true))
