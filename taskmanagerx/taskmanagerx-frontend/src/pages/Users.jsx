@@ -84,7 +84,7 @@ const Users = () => {
                                 <div className="w-20 h-20 flex items-center justify-center rounded-full bg-gray-300 overflow-hidden">
                                     {user.profileImage ? (
                                         <img
-                                            src={user.profileImage}
+                                            src={`${import.meta.env.VITE_API_BASE_URL}/proxy/image?url=${encodeURIComponent(user.profileImage)}`}
                                             alt="User"
                                             className="w-full h-full object-cover"
                                         />

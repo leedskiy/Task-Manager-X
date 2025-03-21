@@ -8,6 +8,11 @@ function Header() {
     const [showMenu, setShowMenu] = useState(false);
     const navigate = useNavigate();
 
+    const googleImageUrl = user?.profileImage;
+    const proxiedImageUrl = googleImageUrl
+        ? `${import.meta.env.VITE_API_BASE_URL}/proxy/image?url=${encodeURIComponent(googleImageUrl)}`
+        : null;
+
     return (
         <header className="flex justify-between items-center bg-white py-3 px-8 shadow-md">
             <div className="flex items-center gap-2">
@@ -34,7 +39,7 @@ function Header() {
                                 onClick={() => setShowMenu(!showMenu)}
                             >
                                 {user?.profileImage ? (
-                                    <img src={user.profileImage} alt="Profile" className="w-full h-full rounded-full object-cover" />
+                                    <img src={proxiedImageUrl} alt="user" className="w-full h-full rounded-full object-cover" />
                                 ) : (
                                     <span className="text-lg font-bold text-black select-none">
                                         {user?.name?.charAt(0).toUpperCase()}

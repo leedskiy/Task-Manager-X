@@ -1,37 +1,30 @@
-package io.leedsk1y.reservault_backend.controllers;
+package io.leedsk1y.taskmanagerx_backend.controllers;
 
-import org.springframework.http.*;
+import io.leedsk1y.taskmanagerx_backend.services.ImageProxyService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
-
-import java.net.URI;
-import java.net.URISyntaxException;
 
 @RestController
 @RequestMapping("/proxy")
 public class ImageProxyController {
+    private final ImageProxyService imageService;
+
+    public ImageProxyController(ImageProxyService imageService) {
+        this.imageService = imageService;
+    }
+
+    /**
+     * Fetches an image from a given URL by proxying the request through the backend.
+     * Delegates the actual image fetching to the ImageService.
+     *
+     * @param url The URL of the image to fetch.
+     * @return A ResponseEntity containing the image or an error response if fetching fails.
+     */
     @GetMapping("/image")
     public ResponseEntity<byte[]> fetchGoogleImage(@RequestParam String url) {
-        try {
-            RestTemplate restTemplate = new RestTemplate();
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("User-Agent", "Mozilla/5.0");
-            HttpEntity<String> entity = new HttpEntity<>(headers);
-
-            ResponseEntity<byte[]> response = restTemplate.exchange(
-                    new URI(url), HttpMethod.GET, entity, byte[].class);
-
-            return ResponseEntity.ok()
-                    .contentType(MediaType.IMAGE_JPEG)
-                    .body(response.getBody());
-        } catch (URISyntaxException | IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        return imageService.fetchImage(url);
     }
 }
