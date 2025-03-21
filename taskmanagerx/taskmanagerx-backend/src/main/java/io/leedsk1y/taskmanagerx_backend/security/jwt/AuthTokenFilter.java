@@ -32,9 +32,10 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         logger.debug("AuthTokenFilter called for URI: {}", request.getRequestURI());
         try {
-            String jwt = parseJwt(request);
+            String jwt = jwtUtils.getJwtFromCookies(request);
+
             if (jwt != null) {
-                if (!jwtUtils.validateJwtToken(jwt)) {
+                if (!jwtUtils.validateJwtToken(jwt, response)) {
                     logger.warn("Invalid or blacklisted token detected: {}", jwt);
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.getWriter().write("{\"error\":\"Unauthorized - Invalid or blacklisted token\"}");
@@ -59,11 +60,5 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
-    }
-
-    private String parseJwt(HttpServletRequest request) {
-        String jwt = jwtUtils.getJwtFromHeader(request);
-        logger.debug("AuthTokenFilter.java: {}", jwt);
-        return jwt;
     }
 }

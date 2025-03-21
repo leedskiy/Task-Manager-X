@@ -1,6 +1,5 @@
 package io.leedsk1y.taskmanagerx_backend.services;
 
-import io.leedsk1y.taskmanagerx_backend.dto.LoginResponseDTO;
 import io.leedsk1y.taskmanagerx_backend.dto.RegisterRequestDTO;
 import io.leedsk1y.taskmanagerx_backend.dto.UserDetailedResponseDTO;
 import io.leedsk1y.taskmanagerx_backend.models.EAuthProvider;
@@ -9,17 +8,22 @@ import io.leedsk1y.taskmanagerx_backend.models.Role;
 import io.leedsk1y.taskmanagerx_backend.models.User;
 import io.leedsk1y.taskmanagerx_backend.repositories.RoleRepository;
 import io.leedsk1y.taskmanagerx_backend.repositories.UserRepository;
+import io.leedsk1y.taskmanagerx_backend.security.jwt.CookieUtils;
 import io.leedsk1y.taskmanagerx_backend.security.jwt.JwtUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -66,50 +70,68 @@ public class AuthService {
     }
 
     /**
-     * Authenticates a user and generates a JWT token.
-     * @param email The user's email.
-     * @param password The user's password.
-     * @return LoginResponseDTO containing the JWT token and user details.
+     * Authenticates the user by checking the provided email and password, and generates a JWT token for the authenticated user.
+     * @param email The email of the user trying to authenticate.
+     * @param password The password of the user.
+     * @return The generated JWT token used for authenticating future requests.
+     * @throws RuntimeException if authentication fails due to invalid credentials.
      */
-    public LoginResponseDTO authenticateUser(String email, String password) {
+    public String authenticateUser(String email, String password) {
         try {
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(email, password));
+                    new UsernamePasswordAuthenticationToken(email.toLowerCase(), password)
+            );
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             User user = userRepository.findByEmail(email.toLowerCase())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-            String jwtToken = jwtUtils.generateTokenFromUsername(userDetails);
-
-            return new LoginResponseDTO(jwtToken, user.getId(), user.getEmail(),
-                    user.getProfileImage(), userDetails.getAuthorities(), user.getAuthProvider());
+            return jwtUtils.generateTokenFromUsername(user.getUsername());
         } catch (AuthenticationException e) {
             throw new RuntimeException("Invalid email or password");
         }
     }
 
     /**
-     * Logs out the user by blacklisting the JWT token.
-     * @param token The JWT token to be blacklisted.
+     * Logs out the user by blacklisting the JWT token and clearing the authentication cookie.
+     * @param request The HTTP request containing the JWT token to be blacklisted.
+     * @param response The HTTP response where the JWT cookie will be cleared.
      */
-    public void logout(String token) {
+    public void logoutUser(HttpServletRequest request, HttpServletResponse response) {
+        String token = jwtUtils.getJwtFromCookies(request);
+
         if (token != null) {
             jwtUtils.blacklistToken(token);
         }
-        SecurityContextHolder.clearContext();
+
+        CookieUtils.clearJwtCookie(response);
     }
 
     /**
-     * Retrieves the currently authenticated user.
-     * @return UserDetailedResponseDTO containing the user details.
+     * Retrieves the details of the currently authenticated user based on the JWT token stored in the cookies.
+     * Validates the token before fetching user details.
+     * @param request The HTTP request containing the JWT token in cookies.
+     * @param response The HTTP response where the JWT token will be validated or cleared if invalid.
+     * @return UserDetailedResponseDTO containing the user's details.
+     * @throws ResponseStatusException if the token is invalid, expired, or if the user is not found.
      */
-    public UserDetailedResponseDTO getAuthenticatedUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return new UserDetailedResponseDTO(user);
+    public UserDetailedResponseDTO getAuthenticatedUser(HttpServletRequest request, HttpServletResponse response) {
+        String token = jwtUtils.getJwtFromCookies(request);
+
+        if (token == null || !jwtUtils.validateJwtToken(token, response)) {
+            CookieUtils.clearJwtCookie(response);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired token");
+        }
+
+        String email = jwtUtils.getUserNameFromJwtToken(token);
+
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
+
+        return new UserDetailedResponseDTO(userOptional.get());
     }
 
     /**

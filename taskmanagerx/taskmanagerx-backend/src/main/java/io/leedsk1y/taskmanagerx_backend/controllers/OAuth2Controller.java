@@ -1,7 +1,7 @@
 package io.leedsk1y.taskmanagerx_backend.controllers;
 
-import io.leedsk1y.taskmanagerx_backend.dto.LoginResponseDTO;
 import io.leedsk1y.taskmanagerx_backend.dto.UserDetailedResponseDTO;
+import io.leedsk1y.taskmanagerx_backend.security.jwt.CookieUtils;
 import io.leedsk1y.taskmanagerx_backend.services.OAuth2Service;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -39,21 +39,6 @@ public class OAuth2Controller {
     }
 
     /**
-     * Creates an authentication cookie with the provided JWT token.
-     * @param token The JWT token to be stored in the cookie.
-     * @return A configured Cookie object.
-     */
-    private Cookie createAuthCookie(String token) {
-        Cookie jwtCookie = new Cookie("token", token);
-        jwtCookie.setHttpOnly(false);
-        jwtCookie.setSecure(true);
-        jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(60);
-        jwtCookie.setAttribute("SameSite", "None");
-        return jwtCookie;
-    }
-
-    /**
      * Handles successful OAuth2 authentication and issues a JWT token.
      * @param response The HTTP response object for setting the authentication cookie.
      * @param authentication The authentication object containing user details.
@@ -62,11 +47,11 @@ public class OAuth2Controller {
     @GetMapping("/success")
     public void handleOAuth2Success(HttpServletResponse response, Authentication authentication) throws IOException {
         try {
-            LoginResponseDTO loginResponse = oAuth2Service.handleOAuth2Authentication((OAuth2AuthenticationToken) authentication);
+            String jwtToken = oAuth2Service.handleOAuth2Authentication((OAuth2AuthenticationToken) authentication);
 
-            response.addCookie(createAuthCookie(loginResponse.getToken()));
+            CookieUtils.setJwtCookie(response, jwtToken);
 
-            response.sendRedirect(frontendUrl);
+            response.sendRedirect(frontendUrl + "/");
         } catch (RuntimeException e) {
             response.sendError(HttpStatus.UNAUTHORIZED.value(), "Authentication failed: " + e.getMessage());
         }

@@ -1,6 +1,5 @@
 package io.leedsk1y.taskmanagerx_backend.services;
 
-import io.leedsk1y.taskmanagerx_backend.dto.LoginResponseDTO;
 import io.leedsk1y.taskmanagerx_backend.dto.UserDetailedResponseDTO;
 import io.leedsk1y.taskmanagerx_backend.models.EAuthProvider;
 import io.leedsk1y.taskmanagerx_backend.models.ERole;
@@ -34,7 +33,7 @@ public class OAuth2Service {
      * @param auth2AuthenticationToken The authentication token from the OAuth2 provider.
      * @return LoginResponseDTO containing the JWT token and user details.
      */
-    public LoginResponseDTO handleOAuth2Authentication(OAuth2AuthenticationToken auth2AuthenticationToken) {
+    public String handleOAuth2Authentication(OAuth2AuthenticationToken auth2AuthenticationToken) {
         OAuth2User oAuth2User = auth2AuthenticationToken.getPrincipal();
         String email = Optional.ofNullable((String) oAuth2User.getAttribute("email"))
                 .orElseThrow(() -> new RuntimeException("OAuth2 authentication failed: Email not found"));
@@ -48,16 +47,7 @@ public class OAuth2Service {
             userRepository.save(user);
         }
 
-        String jwtToken = jwtUtils.generateTokenFromUsername(user);
-
-        return new LoginResponseDTO(
-                jwtToken,
-                user.getId(),
-                user.getEmail(),
-                user.getProfileImage(),
-                user.getAuthorities(),
-                user.getAuthProvider()
-        );
+        return jwtUtils.generateTokenFromUsername(user.getUsername());
     }
 
     /**

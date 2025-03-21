@@ -1,6 +1,7 @@
 package io.leedsk1y.taskmanagerx_backend.controllers;
 
 import io.leedsk1y.taskmanagerx_backend.dto.UserDetailedResponseDTO;
+import io.leedsk1y.taskmanagerx_backend.services.AuthService;
 import io.leedsk1y.taskmanagerx_backend.services.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

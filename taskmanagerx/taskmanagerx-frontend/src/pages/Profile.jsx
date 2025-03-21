@@ -78,8 +78,8 @@ const Profile = () => {
 
     const handleDeleteAccount = async () => {
         try {
-            await api.delete('/users/me', { withCredentials: true });
-            logout(navigate);
+            await api.delete('/users/me');
+            navigate('/register');
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to delete account');
         } finally {

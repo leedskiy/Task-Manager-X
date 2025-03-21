@@ -4,6 +4,7 @@ import io.leedsk1y.taskmanagerx_backend.dto.UserDetailedResponseDTO;
 import io.leedsk1y.taskmanagerx_backend.models.User;
 import io.leedsk1y.taskmanagerx_backend.repositories.TaskRepository;
 import io.leedsk1y.taskmanagerx_backend.repositories.UserRepository;
+import io.leedsk1y.taskmanagerx_backend.security.jwt.CookieUtils;
 import io.leedsk1y.taskmanagerx_backend.security.jwt.JwtUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -51,7 +52,7 @@ public class UserService {
     }
 
     /**
-     * Deletes the authenticated user's account, logs them out, and clears associated tasks.
+     * Deletes the authenticated user's account, logs them out, and clears associated tasks and cookies.
      * @param request HTTP request containing authentication details.
      * @param response HTTP response to process logout.
      */
@@ -60,7 +61,7 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        String token = jwtUtils.getJwtFromHeader(request);
+        String token = jwtUtils.getJwtFromCookies(request);
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null) {
@@ -71,6 +72,8 @@ public class UserService {
         if (token != null) {
             jwtUtils.blacklistToken(token);
         }
+
+        CookieUtils.clearJwtCookie(response);
 
         taskRepository.deleteAll(taskRepository.findTasksByUserId(user.getId()));
 

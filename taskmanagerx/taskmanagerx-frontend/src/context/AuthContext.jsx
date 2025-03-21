@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import api from '../api/axios';
-import { getTokenFromCookies } from '../api/axios';
 
 const AuthContext = createContext();
 
@@ -27,8 +26,7 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (credentials) => {
         try {
-            const response = await api.post('/auth/login', credentials);
-            localStorage.setItem('token', response.data.token);
+            await api.post('/auth/login', credentials);
             setIsAuthenticated(true);
             await fetchUserProfile();
         } catch (error) {
@@ -39,7 +37,6 @@ export const AuthProvider = ({ children }) => {
     const logout = async (navigate) => {
         try {
             await api.post('/auth/logout');
-            localStorage.removeItem('token');
             setUser(null);
             setIsAuthenticated(false);
             setIsAdmin(false);
@@ -50,12 +47,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     useEffect(() => {
-        const token = localStorage.getItem('token') || getTokenFromCookies();
-        if (token) {
-            fetchUserProfile();
-        } else {
-            setLoading(false);
-        }
+        fetchUserProfile();
     }, []);
 
     return (
